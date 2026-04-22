@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homeowner Dashboard</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a18; padding: 2rem; }
+.dash { max-width: 900px; margin: 0 auto; }
+.section-title { font-size: 13px; font-weight: 500; color: #888780; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.metric { background: #ebebea; border-radius: 8px; padding: 14px 16px; }
+.metric-label { font-size: 12px; color: #888780; margin-bottom: 6px; }
+.metric-value { font-size: 22px; font-weight: 500; color: #1a1a18; }
+.metric-sub { font-size: 12px; margin-top: 4px; }
+.metric-up { color: #3b6d11; }
+.metric-down { color: #a32d2d; }
+.metric-neutral { color: #888780; }
+.metric-warning { color: #854f0b; }
+.card { background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+.two-col { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1rem; margin-bottom: 1rem; }
+.card-title { font-size: 14px; font-weight: 500; color: #1a1a18; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+.tag { font-size: 11px; padding: 3px 8px; border-radius: 8px; font-weight: 500; }
+.tag-success { background: #eaf3de; color: #3b6d11; }
+.tag-warning { background: #faeeda; color: #854f0b; }
+.tag-danger { background: #fcebeb; color: #a32d2d; }
+.tag-info { background: #e6f1fb; color: #185fa5; }
+.bill-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid rgba(0,0,0,0.1); font-size: 13px; }
+.bill-row:last-child { border-bottom: none; padding-bottom: 0; }
+.bill-name { color: #1a1a18; font-weight: 400; }
+.bill-meta { color: #888780; font-size: 11px; margin-top: 2px; }
+.bill-amount { font-weight: 500; color: #1a1a18; }
+.bar-wrap { margin-top: 8px; }
+.bar-label { display: flex; justify-content: space-between; font-size: 12px; color: #888780; margin-bottom: 4px; }
+.bar-track { height: 8px; background: #ebebea; border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; }
+.bar-blue { background: #378ADD; }
+.bar-teal { background: #1D9E75; }
+.bar-amber { background: #BA7517; }
+.bar-red { background: #E24B4A; }
+.bar-purple { background: #7F77DD; }
+.insight-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 0.5px solid rgba(0,0,0,0.1); }
+.insight-row:last-child { border-bottom: none; }
+.insight-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.insight-text { font-size: 13px; color: #1a1a18; line-height: 1.5; }
+.insight-sub { font-size: 12px; color: #888780; margin-top: 2px; }
+.svg-chart { width: 100%; overflow: visible; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #888780; margin-bottom: 6px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cash-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 0.5px solid rgba(0,0,0,0.1); font-size: 13px; }
+.cash-row:last-child { border-bottom: none; }
+.cash-cat { color: #888780; }
+.cash-val { font-weight: 500; }
+.cash-val-pos { color: #3b6d11; }
+.cash-val-neg { color: #a32d2d; }
+.tab-row { display: flex; gap: 6px; margin-bottom: 14px; }
+.tab { font-size: 12px; padding: 5px 12px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.15); background: transparent; color: #888780; cursor: pointer; font-family: inherit; }
+.tab.active { background: #ebebea; color: #1a1a18; border-color: rgba(0,0,0,0.25); font-weight: 500; }
+.edit-btn { font-size: 11px; padding: 3px 10px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.25); background: transparent; color: #888780; cursor: pointer; font-family: inherit; }
+.edit-btn:hover { background: #ebebea; }
+.prop-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 0.5px solid rgba(0,0,0,0.1); }
+.prop-icon { width: 44px; height: 44px; border-radius: 8px; background: #e6f1fb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.prop-name { font-size: 16px; font-weight: 500; color: #1a1a18; }
+.prop-addr { font-size: 13px; color: #888780; margin-top: 2px; }
+.equity-ring { display: flex; align-items: center; gap: 16px; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px; padding: 1.5rem; width: 360px; max-width: 90vw; }
+.modal-title { font-size: 15px; font-weight: 500; margin-bottom: 1rem; color: #1a1a18; }
+.field { margin-bottom: 14px; }
+.field label { font-size: 12px; color: #888780; display: block; margin-bottom: 5px; }
+.field input { width: 100%; font-size: 14px; padding: 8px 10px; border: 0.5px solid rgba(0,0,0,0.2); border-radius: 8px; font-family: inherit; outline: none; }
+.field input:focus { border-color: #378ADD; box-shadow: 0 0 0 2px rgba(55,138,221,0.15); }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+.btn-primary { font-size: 13px; padding: 7px 16px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.25); background: #ebebea; color: #1a1a18; cursor: pointer; font-family: inherit; font-weight: 500; }
+.btn-primary:hover { background: #d3d1c7; }
+.btn-ghost { font-size: 13px; padding: 7px 16px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.12); background: transparent; color: #888780; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+<div class="dash">
+
+<div class="prop-header">
+  <div class="prop-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  </div>
+  <div>
+    <div class="prop-name" id="prop-name">142 Maple Street</div>
+    <div class="prop-addr" id="prop-addr">Seattle, WA 98101 &nbsp;·&nbsp; Single family</div>
+  </div>
+  <button class="edit-btn" style="margin-left:auto" onclick="document.getElementById('prop-modal').classList.add('open')">Edit property</button>
+</div>
+
+<div class="section-title">Overview</div>
+<div class="metric-grid">
+  <div class="metric">
+    <div class="metric-label">Estimated value</div>
+    <div class="metric-value" id="m-value">$685,000</div>
+    <div class="metric-sub metric-up">+3.2% this year</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Home equity</div>
+    <div class="metric-value" id="m-equity">$198,500</div>
+    <div class="metric-sub metric-neutral" id="m-equity-pct">29% of value</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Monthly cash flow</div>
+    <div class="metric-value" id="m-cashflow" style="color:#3b6d11">+$340</div>
+    <div class="metric-sub metric-neutral">Rental income surplus</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Bills due this month</div>
+    <div class="metric-value" id="m-bills">$4,210</div>
+    <div class="metric-sub metric-warning">2 due within 5 days</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">Mortgage <button class="edit-btn" onclick="openModal('mortgage-modal')">Edit</button></div>
+    <div style="font-size:28px;font-weight:500;color:#1a1a18;margin-bottom:4px">$2,340<span style="font-size:14px;font-weight:400;color:#888780">/mo</span></div>
+    <div style="font-size:12px;color:#888780;margin-bottom:14px">30-yr fixed · 6.25% · 22 yrs remaining</div>
+    <div class="bar-wrap">
+      <div class="bar-label"><span>Principal balance</span><span id="mort-principal">$486,500</span></div>
+      <div class="bar-track"><div class="bar-fill bar-blue" id="mort-bar" style="width:71%"></div></div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:16px">
+      <div><div style="font-size:11px;color:#888780">Principal paid</div><div style="font-size:13px;font-weight:500" id="mort-paid">$198,500</div></div>
+      <div><div style="font-size:11px;color:#888780">Interest/mo</div><div style="font-size:13px;font-weight:500">$2,534</div></div>
+      <div><div style="font-size:11px;color:#888780">Payoff date</div><div style="font-size:13px;font-weight:500">Jan 2047</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Equity breakdown</div>
+    <div class="equity-ring">
+      <svg width="90" height="90" viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r="36" fill="none" stroke="#ebebea" stroke-width="14"/>
+        <circle cx="45" cy="45" r="36" fill="none" stroke="#378ADD" stroke-width="14" stroke-dasharray="226.2" stroke-dashoffset="160.6" stroke-linecap="butt" transform="rotate(-90 45 45)" id="equity-arc"/>
+        <text x="45" y="41" text-anchor="middle" font-size="13" font-weight="500" fill="#1a1a18" id="eq-pct-text">29%</text>
+        <text x="45" y="55" text-anchor="middle" font-size="10" fill="#888780">equity</text>
+      </svg>
+      <div>
+        <div class="legend-item"><div class="legend-dot" style="background:#378ADD"></div>Equity: <strong id="leg-eq">$198,500</strong></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ebebea;border:1px solid rgba(0,0,0,0.1)"></div>Balance: <strong id="leg-bal">$486,500</strong></div>
+        <div style="margin-top:10px;font-size:12px;color:#888780">Purchase price</div>
+        <div style="font-size:13px;font-weight:500" id="leg-purchase">$685,000</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">Bills due this month <button class="edit-btn" onclick="openModal('bill-modal')">+ Add</button></div>
+    <div id="bills-list">
+      <div class="bill-row"><div><div class="bill-name">HOA fees</div><div class="bill-meta">Due Apr 1 · Auto-pay</div></div><div style="text-align:right"><div class="bill-amount">$320</div><span class="tag tag-success">Paid</span></div></div>
+      <div class="bill-row"><div><div class="bill-name">Property insurance</div><div class="bill-meta">Due Apr 15 · Annual</div></div><div style="text-align:right"><div class="bill-amount">$185/mo</div><span class="tag tag-warning">Due in 1 day</span></div></div>
+      <div class="bill-row"><div><div class="bill-name">Property tax</div><div class="bill-meta">Due Apr 30 · Biannual</div></div><div style="text-align:right"><div class="bill-amount">$920</div><span class="tag tag-info">Upcoming</span></div></div>
+      <div class="bill-row"><div><div class="bill-name">Water & sewer</div><div class="bill-meta">Due Apr 20</div></div><div style="text-align:right"><div class="bill-amount">$75</div><span class="tag tag-info">Upcoming</span></div></div>
+      <div class="bill-row"><div><div class="bill-name">Electricity</div><div class="bill-meta">Due Apr 18</div></div><div style="text-align:right"><div class="bill-amount">$110</div><span class="tag tag-warning">Due in 4 days</span></div></div>
+      <div class="bill-row"><div><div class="bill-name">Internet</div><div class="bill-meta">Due Apr 22 · Auto-pay</div></div><div style="text-align:right"><div class="bill-amount">$80</div><span class="tag tag-info">Upcoming</span></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Rental income <button class="edit-btn" onclick="openModal('rental-modal')">Edit</button></div>
+    <div style="font-size:28px;font-weight:500;color:#3b6d11;margin-bottom:4px">$2,800<span style="font-size:14px;font-weight:400;color:#888780">/mo</span></div>
+    <div style="font-size:12px;color:#888780;margin-bottom:14px">Unit B · Lease ends Oct 2025</div>
+    <div class="cash-row"><div class="cash-cat">Gross rent</div><div class="cash-val cash-val-pos" id="rc-rent">+$2,800</div></div>
+    <div class="cash-row"><div class="cash-cat">Mortgage</div><div class="cash-val cash-val-neg" id="rc-mort">–$2,340</div></div>
+    <div class="cash-row"><div class="cash-cat">Bills & expenses</div><div class="cash-val cash-val-neg" id="rc-bills">–$120</div></div>
+    <div class="cash-row" style="border-top:0.5px solid rgba(0,0,0,0.2);margin-top:4px;padding-top:10px"><div class="cash-cat" style="font-weight:500;color:#1a1a18">Net cash flow</div><div class="cash-val cash-val-pos" style="font-size:15px" id="rc-net">+$340</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Monthly spending breakdown</div>
+  <div class="bar-wrap" style="margin-bottom:10px"><div class="bar-label"><span>Mortgage</span><span>$2,340</span></div><div class="bar-track"><div class="bar-fill bar-blue" style="width:56%"></div></div></div>
+  <div class="bar-wrap" style="margin-bottom:10px"><div class="bar-label"><span>Property tax</span><span>$920</span></div><div class="bar-track"><div class="bar-fill bar-amber" style="width:22%"></div></div></div>
+  <div class="bar-wrap" style="margin-bottom:10px"><div class="bar-label"><span>HOA fees</span><span>$320</span></div><div class="bar-track"><div class="bar-fill bar-purple" style="width:8%"></div></div></div>
+  <div class="bar-wrap" style="margin-bottom:10px"><div class="bar-label"><span>Insurance</span><span>$185</span></div><div class="bar-track"><div class="bar-fill bar-teal" style="width:4%"></div></div></div>
+  <div class="bar-wrap"><div class="bar-label"><span>Utilities</span><span>$265</span></div><div class="bar-track"><div class="bar-fill bar-red" style="width:6%"></div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-title">Analytics & insights</div>
+  <div class="tab-row">
+    <button class="tab active" onclick="showTab('insights')">Key insights</button>
+    <button class="tab" onclick="showTab('value')">Value trend</button>
+    <button class="tab" onclick="showTab('equity-build')">Equity growth</button>
+  </div>
+
+  <div id="tab-insights">
+    <div class="insight-row"><div class="insight-dot" style="background:#1D9E75"></div><div><div class="insight-text">Your rental income covers 120% of your mortgage payment</div><div class="insight-sub">Net yield on property value: ~4.9% annually — above Seattle average of 4.1%</div></div></div>
+    <div class="insight-row"><div class="insight-dot" style="background:#378ADD"></div><div><div class="insight-text">Equity has grown $41,200 in the last 12 months</div><div class="insight-sub">$22,000 from principal paydown + $19,200 from estimated appreciation</div></div></div>
+    <div class="insight-row"><div class="insight-dot" style="background:#BA7517"></div><div><div class="insight-text">At current pace, you'll reach 20% LTV in ~3.2 years</div><div class="insight-sub">Eliminating PMI would save ~$190/mo if applicable to your loan</div></div></div>
+    <div class="insight-row"><div class="insight-dot" style="background:#E24B4A"></div><div><div class="insight-text">2 bills are due within 5 days totaling $295</div><div class="insight-sub">Property insurance ($185) and electricity ($110) — consider enabling auto-pay</div></div></div>
+    <div class="insight-row"><div class="insight-dot" style="background:#7F77DD"></div><div><div class="insight-text">Annual property costs represent 7.4% of home value</div><div class="insight-sub">Industry benchmark is 1–4%. Review HOA fees and insurance rate at renewal</div></div></div>
+  </div>
+
+  <div id="tab-value" style="display:none">
+    <svg class="svg-chart" height="160" viewBox="0 0 560 160" preserveAspectRatio="none">
+      <defs><linearGradient id="vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#378ADD" stop-opacity="0.15"/><stop offset="100%" stop-color="#378ADD" stop-opacity="0"/></linearGradient></defs>
+      <path d="M0,130 L80,120 L160,112 L240,100 L320,88 L400,72 L480,60 L560,48" fill="none" stroke="#378ADD" stroke-width="2" stroke-linecap="round"/>
+      <path d="M0,130 L80,120 L160,112 L240,100 L320,88 L400,72 L480,60 L560,48 L560,155 L0,155 Z" fill="url(#vg)"/>
+      <text x="0" y="155" font-size="11" fill="#888780">Apr '23</text>
+      <text x="224" y="155" font-size="11" fill="#888780">Oct '23</text>
+      <text x="452" y="155" font-size="11" fill="#888780">Apr '24</text>
+      <text x="520" y="155" font-size="11" fill="#888780">Now</text>
+      <text x="560" y="44" font-size="11" fill="#378ADD" text-anchor="end">$685k</text>
+      <text x="0" y="128" font-size="11" fill="#888780">$620k</text>
+    </svg>
+    <div style="font-size:12px;color:#888780;margin-top:8px">Estimated value trend based on 3.2% annual appreciation rate. Values are estimates only.</div>
+  </div>
+
+  <div id="tab-equity-build" style="display:none">
+    <svg class="svg-chart" height="160" viewBox="0 0 560 160" preserveAspectRatio="none">
+      <path d="M0,148 L80,142 L160,134 L240,122 L320,108 L400,90 L480,68 L560,44" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linecap="round"/>
+      <path d="M0,140 L80,138 L160,135 L240,132 L320,128 L400,124 L480,118 L560,110" fill="none" stroke="#378ADD" stroke-width="1.5" stroke-dasharray="4,3" stroke-linecap="round"/>
+      <text x="0" y="155" font-size="11" fill="#888780">Now</text>
+      <text x="220" y="155" font-size="11" fill="#888780">5 yrs</text>
+      <text x="430" y="155" font-size="11" fill="#888780">10 yrs</text>
+      <text x="560" y="40" font-size="11" fill="#1D9E75" text-anchor="end">$390k</text>
+      <text x="560" y="106" font-size="11" fill="#378ADD" text-anchor="end">$290k</text>
+    </svg>
+    <div style="display:flex;gap:16px;margin-top:10px">
+      <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>Total equity (w/ appreciation)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#378ADD;border-radius:0;width:14px;height:3px;margin-top:3px"></div>Principal-only equity</div>
+    </div>
+    <div style="font-size:12px;color:#888780;margin-top:6px">Projected 10-year equity assuming 3.2% annual appreciation and current mortgage terms.</div>
+  </div>
+</div>
+
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="prop-modal">
+  <div class="modal">
+    <div class="modal-title">Edit property details</div>
+    <div class="field"><label>Property name / nickname</label><input id="f-propname" type="text" value="142 Maple Street"/></div>
+    <div class="field"><label>Address</label><input id="f-addr" type="text" value="142 Maple Street, Seattle, WA 98101"/></div>
+    <div class="field"><label>Estimated market value ($)</label><input id="f-value" type="number" value="685000"/></div>
+    <div class="modal-btns"><button class="btn-ghost" onclick="closeModal('prop-modal')">Cancel</button><button class="btn-primary" onclick="saveProp()">Save</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="mortgage-modal">
+  <div class="modal">
+    <div class="modal-title">Edit mortgage details</div>
+    <div class="field"><label>Monthly payment ($)</label><input id="f-mortpay" type="number" value="2340"/></div>
+    <div class="field"><label>Remaining principal ($)</label><input id="f-mortbal" type="number" value="486500"/></div>
+    <div class="field"><label>Original loan amount ($)</label><input id="f-mortorig" type="number" value="685000"/></div>
+    <div class="modal-btns"><button class="btn-ghost" onclick="closeModal('mortgage-modal')">Cancel</button><button class="btn-primary" onclick="saveMortgage()">Save</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="rental-modal">
+  <div class="modal">
+    <div class="modal-title">Edit rental income</div>
+    <div class="field"><label>Monthly rent income ($)</label><input id="f-rent" type="number" value="2800"/></div>
+    <div class="field"><label>Monthly bills/expenses charged to tenant ($)</label><input id="f-rentbills" type="number" value="120"/></div>
+    <div class="modal-btns"><button class="btn-ghost" onclick="closeModal('rental-modal')">Cancel</button><button class="btn-primary" onclick="saveRental()">Save</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bill-modal">
+  <div class="modal">
+    <div class="modal-title">Add a bill</div>
+    <div class="field"><label>Bill name</label><input id="f-billname" type="text" placeholder="e.g. Landscaping"/></div>
+    <div class="field"><label>Amount ($)</label><input id="f-billamount" type="number" placeholder="0"/></div>
+    <div class="field"><label>Due date</label><input id="f-billdue" type="text" placeholder="e.g. Apr 25"/></div>
+    <div class="modal-btns"><button class="btn-ghost" onclick="closeModal('bill-modal')">Cancel</button><button class="btn-primary" onclick="addBill()">Add bill</button></div>
+  </div>
+</div>
+
+<script>
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+
+function fmt(n){ return '$' + Math.round(n).toLocaleString(); }
+
+let state = { mortPay: 2340, mortBal: 486500, mortOrig: 685000, propVal: 685000, rent: 2800, rentBills: 120 };
+
+function saveProp(){
+  const name = document.getElementById('f-propname').value;
+  const addr = document.getElementById('f-addr').value;
+  state.propVal = parseFloat(document.getElementById('f-value').value)||685000;
+  document.getElementById('prop-name').textContent = name;
+  document.getElementById('prop-addr').textContent = addr + ' · Single family';
+  document.getElementById('m-value').textContent = fmt(state.propVal);
+  closeModal('prop-modal');
+  recalc();
+}
+
+function recalc(){
+  const eq = state.propVal - state.mortBal;
+  const eqPct = Math.round((eq/state.propVal)*100);
+  document.getElementById('m-equity').textContent = fmt(eq);
+  document.getElementById('m-equity-pct').textContent = eqPct + '% of value';
+  const cf = state.rent - state.mortPay - state.rentBills;
+  document.getElementById('m-cashflow').textContent = (cf>=0?'+':'')+fmt(cf);
+  document.getElementById('m-cashflow').style.color = cf>=0 ? '#3b6d11' : '#a32d2d';
+  const circumference = 226.2;
+  document.getElementById('equity-arc').setAttribute('stroke-dashoffset', (circumference*(1-eqPct/100)).toFixed(1));
+  document.getElementById('eq-pct-text').textContent = eqPct + '%';
+  document.getElementById('leg-eq').textContent = fmt(eq);
+  document.getElementById('leg-bal').textContent = fmt(state.mortBal);
+  document.getElementById('leg-purchase').textContent = fmt(state.propVal);
+}
+
+function saveMortgage(){
+  state.mortPay = parseFloat(document.getElementById('f-mortpay').value)||2340;
+  state.mortBal = parseFloat(document.getElementById('f-mortbal').value)||486500;
+  state.mortOrig = parseFloat(document.getElementById('f-mortorig').value)||685000;
+  document.getElementById('mort-principal').textContent = fmt(state.mortBal);
+  document.getElementById('mort-paid').textContent = fmt(state.mortOrig - state.mortBal);
+  document.getElementById('mort-bar').style.width = Math.round((state.mortBal/state.mortOrig)*100)+'%';
+  document.getElementById('rc-mort').textContent = '–'+fmt(state.mortPay);
+  updateCashFlow();
+  recalc();
+  closeModal('mortgage-modal');
+}
+
+function saveRental(){
+  state.rent = parseFloat(document.getElementById('f-rent').value)||2800;
+  state.rentBills = parseFloat(document.getElementById('f-rentbills').value)||120;
+  document.getElementById('rc-rent').textContent = '+'+fmt(state.rent);
+  document.getElementById('rc-bills').textContent = '–'+fmt(state.rentBills);
+  updateCashFlow();
+  recalc();
+  closeModal('rental-modal');
+}
+
+function updateCashFlow(){
+  const cf = state.rent - state.mortPay - state.rentBills;
+  document.getElementById('rc-net').textContent = (cf>=0?'+':'')+fmt(cf);
+  document.getElementById('rc-net').style.color = cf>=0 ? '#3b6d11' : '#a32d2d';
+  document.getElementById('m-cashflow').textContent = (cf>=0?'+':'')+fmt(cf);
+  document.getElementById('m-cashflow').style.color = cf>=0 ? '#3b6d11' : '#a32d2d';
+}
+
+function addBill(){
+  const name = document.getElementById('f-billname').value.trim();
+  const amount = parseFloat(document.getElementById('f-billamount').value)||0;
+  const due = document.getElementById('f-billdue').value.trim();
+  if(!name) return;
+  const row = document.createElement('div');
+  row.className = 'bill-row';
+  row.innerHTML = `<div><div class="bill-name">${name}</div><div class="bill-meta">Due ${due||'TBD'}</div></div><div style="text-align:right"><div class="bill-amount">${fmt(amount)}</div><span class="tag tag-info">Upcoming</span></div>`;
+  document.getElementById('bills-list').appendChild(row);
+  document.getElementById('f-billname').value='';
+  document.getElementById('f-billamount').value='';
+  document.getElementById('f-billdue').value='';
+  closeModal('bill-modal');
+}
+
+function showTab(name){
+  ['insights','value','equity-build'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((btn,i) => {
+    btn.classList.toggle('active', ['insights','value','equity-build'][i]===name);
+  });
+}
+</script>
+</body>
+</html>
