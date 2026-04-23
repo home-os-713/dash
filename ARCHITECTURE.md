@@ -39,7 +39,10 @@ graph TD
     User -->|"HTTP request"| Proxy
     Proxy -->|"authenticated"| Dashboard
     Proxy -->|"not authenticated"| LoginSignup
-    Dashboard <-->|"read / upsert data"| DB
+    Dashboard -->|"first load: fetch property + bills"| DB
+    Dashboard -->|"on save: upsert property fields"| DB
+    Dashboard -->|"on add bill: insert row"| DB
+    DB -->|"returns rows"| Dashboard
     LoginSignup <-->|"sign in / sign up"| Auth
     Auth -->|"confirmation email"| User
     User -->|"clicks email link"| AuthCallback
@@ -128,9 +131,12 @@ flowchart LR
     B --> C{Authenticated?}
     C -->|No| D["/login"]
     C -->|Yes| E["/dashboard"]
-    E --> F["Load property\nfrom Supabase"]
-    F --> G["Load bills\nfrom Supabase"]
+    E --> F["Fetch properties\ntable by user_id"]
+    F --> G["Fetch bills\ntable by property_id"]
     G --> H["Render dashboard\nwith user's data"]
+    H --> I{User edits\na value}
+    I -->|"property field\n(value, mortgage, rent)"| J["UPSERT properties\nrow in DB"]
+    I -->|"adds a bill"| K["INSERT into\nbills table"]
 ```
 
 ---
