@@ -15,7 +15,8 @@ export default function SignupPage() {
     setLoading(true);
     setError('');
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({ email, password });
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
     if (error) {
       setError(error.message);
       setLoading(false);
