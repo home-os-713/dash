@@ -2,6 +2,8 @@
 
 A web app where homeowners track their property finances: mortgage, equity, bills, and rental income. Each user has their own account and data.
 
+**Status:** Live and fully functional — auth, data persistence, and Vercel deployment are all in place.
+
 ---
 
 ## Tech Stack (TL;DR)
@@ -24,7 +26,6 @@ graph TD
     User["👤 User (Browser)"]
 
     subgraph Vercel["Vercel (Hosting)"]
-        Next["Next.js App"]
         Proxy["proxy.ts\n(auth guard)"]
         Dashboard["Dashboard Page"]
         AuthCallback["/auth/callback"]
@@ -33,20 +34,25 @@ graph TD
 
     subgraph Supabase["Supabase (Backend)"]
         Auth["Auth Service\n(email + sessions)"]
-        DB[(PostgreSQL\nproperties + bills)]
+        subgraph DB["PostgreSQL"]
+            Props[("properties\n(one per user)")]
+            Bills[("bills\n(many per property)")]
+        end
     end
 
     User -->|"HTTP request"| Proxy
     Proxy -->|"authenticated"| Dashboard
     Proxy -->|"not authenticated"| LoginSignup
-    Dashboard -->|"first load: fetch property + bills"| DB
-    Dashboard -->|"on save: upsert property fields"| DB
-    Dashboard -->|"on add bill: insert row"| DB
-    DB -->|"returns rows"| Dashboard
+    Dashboard -->|"on load: SELECT by user_id"| Props
+    Dashboard -->|"on load: SELECT by property_id"| Bills
+    Dashboard -->|"on edit: UPSERT"| Props
+    Dashboard -->|"on add bill: INSERT"| Bills
+    Props -->|"property data"| Dashboard
+    Bills -->|"bills list"| Dashboard
     LoginSignup <-->|"sign in / sign up"| Auth
     Auth -->|"confirmation email"| User
     User -->|"clicks email link"| AuthCallback
-    AuthCallback -->|"exchange code"| Auth
+    AuthCallback -->|"exchange code for session"| Auth
     AuthCallback -->|"redirect"| Dashboard
 ```
 
@@ -121,9 +127,9 @@ erDiagram
 
 ---
 
-## Request Flow (Page Load)
+## Request Flow (Page Load + Edits)
 
-What happens on every page request:
+What happens on every page request and user interaction:
 
 ```mermaid
 flowchart LR
@@ -131,12 +137,13 @@ flowchart LR
     B --> C{Authenticated?}
     C -->|No| D["/login"]
     C -->|Yes| E["/dashboard"]
-    E --> F["Fetch properties\ntable by user_id"]
-    F --> G["Fetch bills\ntable by property_id"]
+    E --> F["SELECT from properties\nWHERE user_id = me"]
+    F --> G["SELECT from bills\nWHERE property_id = mine"]
     G --> H["Render dashboard\nwith user's data"]
     H --> I{User edits\na value}
     I -->|"property field\n(value, mortgage, rent)"| J["UPSERT properties\nrow in DB"]
     I -->|"adds a bill"| K["INSERT into\nbills table"]
+    J & K --> H
 ```
 
 ---
@@ -145,18 +152,18 @@ flowchart LR
 
 ```
 app/
-  dashboard/page.tsx     ← main page: state + Supabase reads/writes
+  dashboard/page.tsx     ← main page: useReducer state + all Supabase reads/writes
   login/page.tsx         ← sign-in form
   signup/page.tsx        ← registration form
-  auth/callback/route.ts ← handles email confirmation redirect
-  globals.css            ← all styles (from original prototype)
+  auth/callback/route.ts ← handles email confirmation code → session exchange
+  globals.css            ← all styles (from original prototype, keep as-is)
 
-proxy.ts                 ← auth guard on every request
+proxy.ts                 ← Next.js 16 auth guard (was middleware.ts — do not rename)
 
 lib/
-  types.ts               ← shared types + default data
-  supabase/client.ts     ← Supabase client for browser components
-  supabase/server.ts     ← Supabase client for server components
+  types.ts               ← shared types + default data + fmt() utility
+  supabase/client.ts     ← Supabase client for browser ('use client') components
+  supabase/server.ts     ← Supabase client for server components and routes
 
 components/
   PropertyHeader.tsx     ← property name, address, edit modal
@@ -173,8 +180,10 @@ components/
 
 ## Planned Next Steps
 
-- **Vercel deploy** — connect GitHub repo, set env vars, get a live URL
 - **Google + Apple sign-in** — OAuth via Supabase (Auth → Providers)
-- **External data integrations** — Zillow (property value), utility APIs (bills), Google Calendar (due date reminders), mortgage servicer APIs
+- **Zillow API** — auto-fill property value and neighborhood comps
+- **Utility provider APIs** — pull electricity, water/sewer, gas bills automatically
+- **Google Calendar / iCal** — surface bill due dates as reminders
+- **Mortgage servicer APIs** — pull live balance, payment history, escrow
+- **Analytics & insights section** — re-add once real data sources feed it
 - **Multi-property support** — current model is one property per user
-- **Analytics section** — re-add once real data sources are connected
