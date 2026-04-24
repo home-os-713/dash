@@ -119,5 +119,7 @@ After adding a new custom domain or Vercel preview URL, add `/auth/callback` for
 - **Utility provider APIs** — pull electricity, water/sewer, gas bills automatically
 - **Google Calendar / iCal** — surface bill due dates as reminders
 - **Mortgage servicer APIs** — pull live balance, payment history, escrow
+- **Email integration (Gmail/Outlook)** — scan property-related emails (utility bills, HOA notices, contractor quotes, mortgage statements) and extract action items + due dates. Gmail API fetches emails → Claude API parses unstructured content into structured data (amount, due date, action required) → writes to Supabase. Implement as a Next.js API route or Supabase edge function.
 - **Analytics & insights section** — re-add once real data sources feed it
 - **Multi-property support** — current model is one property per user
+- **Vercel Pro** — if partner needs shared Vercel dashboard access
