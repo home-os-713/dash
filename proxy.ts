@@ -2,10 +2,6 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
-  // TEMP: auth bypass while running without Supabase credentials.
-  // Revert this early-return when NEXT_PUBLIC_SUPABASE_ANON_KEY is set.
-  return NextResponse.next({ request });
-
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

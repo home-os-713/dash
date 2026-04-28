@@ -43,15 +43,7 @@ export default function DashboardPage() {
 
   const supabase = createClient();
 
-  // TEMP: bypass Supabase load while running without credentials.
-  // Remove this constant and the early-return below when keys are wired up.
-  const TEMP_BYPASS_SUPABASE = true;
-
   useEffect(() => {
-    if (TEMP_BYPASS_SUPABASE) {
-      setLoading(false);
-      return;
-    }
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
