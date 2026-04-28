@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useReducer, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { DashboardState, DEFAULT_STATE, Bill } from '@/lib/types';
@@ -42,7 +43,15 @@ export default function DashboardPage() {
 
   const supabase = createClient();
 
+  // TEMP: bypass Supabase load while running without credentials.
+  // Remove this constant and the early-return below when keys are wired up.
+  const TEMP_BYPASS_SUPABASE = true;
+
   useEffect(() => {
+    if (TEMP_BYPASS_SUPABASE) {
+      setLoading(false);
+      return;
+    }
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -163,7 +172,8 @@ export default function DashboardPage() {
 
   return (
     <div className="dash">
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
+        <Link href="/homeos" className="edit-btn">HomeOS →</Link>
         <button className="edit-btn" onClick={handleSignOut}>Sign out</button>
       </div>
       <PropertyHeader
