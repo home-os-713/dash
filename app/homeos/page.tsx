@@ -524,7 +524,7 @@ export default function HomeOSDashboard() {
                         color: "#C7BBA3",
                         fontSize: "13px",
                       }}
-                      formatter={(value: number, name: string) => [`$${value}`, name.charAt(0).toUpperCase() + name.slice(1)]}
+                      formatter={(value, name) => [`$${value ?? ''}`, String(name ?? '').charAt(0).toUpperCase() + String(name ?? '').slice(1)]}
                     />
                     <Legend
                       iconType="circle"
