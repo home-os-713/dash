@@ -81,6 +81,25 @@ git push origin main   # → Vercel auto-deploys ✓
 
 ---
 
+## Design feedback & open questions
+
+The `/homeos` page is a good prototype of the product vision — it covers multi-property, utility tracking, compliance, and a health score. A few things to align on as a team:
+
+1. **Styling direction** — `/dashboard` uses vanilla CSS, `/homeos` uses Tailwind. At some point we should pick one and unify. Tailwind scales better; vanilla is simpler. Decision needed before we build more UI.
+2. **Mock data** — `/homeos` is hardcoded with fake properties. The immediate next step is wiring it to Supabase so logged-in users see their actual data. This also requires extending the DB schema to support multiple properties per user.
+3. **Routing** — currently `/homeos` is a separate page linked from the dashboard. We should decide: does it replace `/dashboard` eventually, or live alongside it?
+
+---
+
+## Collaboration norms
+
+- **Work in branches, not directly on `main`** — open a PR so the other person can review before merging.
+- **Update the context docs when you make significant changes** — if you add a new page, dependency, or architectural decision, update `CLAUDE.md`, `ARCHITECTURE.md`, and this file. These docs are how we (and any AI assistant) stay in sync across sessions.
+- **Generate context for AI tools** — if you use Claude Code or another AI assistant in your session, save any important decisions or context it surfaces back into `CLAUDE.md`. Think of it as a shared brain for the project.
+- **`.env.local` is never committed** — get the Supabase keys from Jaime directly. Vercel already has them set for all environments so deploys work automatically.
+
+---
+
 ## Key context files in this repo
 
 | File | What it covers |
