@@ -10,6 +10,10 @@
 
 A personal property management web app. Homeowners sign up, enter their property details (mortgage, equity, bills, rental income), and track their finances over time. Each user has their own account and their data persists across sessions and devices.
 
+There are currently two pages:
+- **`/dashboard`** — the live product. Supabase-backed, vanilla CSS, all real data.
+- **`/homeos`** — a design prototype. Mock data, Tailwind + shadcn + recharts. Linked from the dashboard via "HomeOS →" button. Next step is wiring it to real data.
+
 ---
 
 ## Tech Stack TL;DR
@@ -21,7 +25,11 @@ A personal property management web app. Homeowners sign up, enter their property
 | **Auth + DB** | Supabase (PostgreSQL) | Manages user accounts, sign-up/login, and stores all property + bills data. Row-level security means users only ever see their own data |
 | **Deployment** | Vercel | Hosting — connected to GitHub. Every push to `main` auto-deploys to production in ~1 minute. No servers to manage |
 | **Version control** | GitHub | Single source of truth for code. Push access = ability to deploy |
-| **Styling** | Vanilla CSS | Copied from the original prototype — clean design, no framework needed |
+| **Styling** | Vanilla CSS | Used in `/dashboard` — copied from the original prototype, clean design |
+| **Styling** | Tailwind CSS v4 + shadcn/ui | Used in `/homeos` — partner's prototype page |
+| **Charts** | Inline SVG | Used in `/dashboard` — zero dependencies |
+| **Charts** | recharts | Used in `/homeos` — area and bar charts for utilities + finances |
+| **Icons** | lucide-react | Used in `/homeos` |
 
 ---
 
@@ -64,8 +72,9 @@ git push origin main   # → Vercel auto-deploys ✓
 - [ ] **Email integration (Gmail / Outlook)** — scan property-related emails → Claude API extracts action items & due dates → saves to dashboard automatically
 
 ### Features
+- [ ] **Connect /homeos to real data** — currently all mock data; needs Supabase integration + multi-property DB schema
+- [ ] **Multi-property support** — current DB model is one property per user; /homeos prototypes the UI for this
 - [ ] **Analytics & insights section** — was in the original prototype, removed to keep dashboard lean. Re-add once real data sources are connected
-- [ ] **Multi-property support** — current model is one property per user
 
 ### Collaboration
 - [ ] **Vercel Pro** — only needed if partner wants shared Vercel dashboard access (not urgent)

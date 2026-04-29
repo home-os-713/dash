@@ -8,12 +8,17 @@ A web app where homeowners track their property finances: mortgage, equity, bill
 
 ## Tech Stack (TL;DR)
 
-| Layer | Tool | Why |
-|---|---|---|
-| Framework | Next.js 16 (TypeScript) | Full-stack in one repo — handles pages, routing, and API routes |
-| Database + Auth | Supabase (PostgreSQL) | Managed DB with built-in auth and row-level security |
-| Styling | Vanilla CSS | Copied from the original prototype — clean, no framework needed |
-| Deployment | Vercel | Zero-config deploys — push to `main`, it goes live automatically |
+| Layer | Tool | Why | Used in |
+|---|---|---|---|
+| Framework | Next.js 16 (TypeScript) | Full-stack in one repo — handles pages, routing, and API routes | everywhere |
+| Database + Auth | Supabase (PostgreSQL) | Managed DB with built-in auth and row-level security | `/dashboard` |
+| Styling | Vanilla CSS | Copied from the original prototype — clean, no framework needed | `/dashboard` |
+| Styling | Tailwind CSS v4 | Utility-first CSS — partner's prototype page | `/homeos` |
+| UI Components | shadcn/ui | Pre-built Card, Badge components (copied into `components/ui/`) | `/homeos` |
+| Charts | Inline SVG | Zero-dependency charts computed directly in components | `/dashboard` |
+| Charts | recharts | AreaChart, BarChart for utility + financial data | `/homeos` |
+| Icons | lucide-react | Icon library | `/homeos` |
+| Deployment | Vercel | Zero-config deploys — push to `main`, it goes live automatically | everywhere |
 
 ---
 
@@ -27,7 +32,8 @@ graph TD
 
     subgraph Vercel["Vercel (Hosting)"]
         Proxy["proxy.ts\n(auth guard)"]
-        Dashboard["Dashboard Page"]
+        Dashboard["/dashboard\n(live data, Supabase)"]
+        HomeOS["/homeos\n(prototype, mock data)"]
         AuthCallback["/auth/callback"]
         LoginSignup["Login / Signup"]
     end
@@ -42,6 +48,7 @@ graph TD
 
     User -->|"HTTP request"| Proxy
     Proxy -->|"authenticated"| Dashboard
+    Proxy -->|"authenticated"| HomeOS
     Proxy -->|"not authenticated"| LoginSignup
     Dashboard -->|"on load: SELECT by user_id"| Props
     Dashboard -->|"on load: SELECT by property_id"| Bills
@@ -153,15 +160,17 @@ flowchart LR
 ```
 app/
   dashboard/page.tsx     ← main page: useReducer state + all Supabase reads/writes
+  homeos/page.tsx        ← partner's prototype: multi-property vision, mock data only
   login/page.tsx         ← sign-in form
   signup/page.tsx        ← registration form
   auth/callback/route.ts ← handles email confirmation code → session exchange
-  globals.css            ← all styles (from original prototype, keep as-is)
+  globals.css            ← all styles for /dashboard (keep as-is, no Tailwind)
 
 proxy.ts                 ← Next.js 16 auth guard (was middleware.ts — do not rename)
 
 lib/
   types.ts               ← shared types + default data + fmt() utility
+  utils.ts               ← cn() Tailwind class helper (used by /homeos)
   supabase/client.ts     ← Supabase client for browser ('use client') components
   supabase/server.ts     ← Supabase client for server components and routes
 
@@ -174,16 +183,20 @@ components/
   RentalCard.tsx         ← rental income breakdown
   SpendingChart.tsx      ← horizontal bar chart
   Modal.tsx              ← reusable modal wrapper
+  ui/
+    card.tsx             ← shadcn Card (used by /homeos)
+    badge.tsx            ← shadcn Badge (used by /homeos)
 ```
 
 ---
 
 ## Planned Next Steps
 
+- **Connect /homeos to real data** — replace mock data with Supabase reads; requires multi-property DB schema
+- **Multi-property support** — extend DB schema (properties table currently one-per-user)
 - **Google + Apple sign-in** — OAuth via Supabase (Auth → Providers)
 - **Zillow API** — auto-fill property value and neighborhood comps
 - **Utility provider APIs** — pull electricity, water/sewer, gas bills automatically
 - **Google Calendar / iCal** — surface bill due dates as reminders
 - **Mortgage servicer APIs** — pull live balance, payment history, escrow
 - **Analytics & insights section** — re-add once real data sources feed it
-- **Multi-property support** — current model is one property per user
