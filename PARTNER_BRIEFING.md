@@ -58,6 +58,24 @@ git push origin main   # → Vercel auto-deploys ✓
 
 ---
 
+## How deployments work
+
+There are two types of Vercel deployments, and they happen automatically:
+
+| Trigger | What deploys | URL |
+|---|---|---|
+| Push to `main` | **Production** | homeowner-dashboard-woad.vercel.app |
+| Push to any other branch | **Preview** | A unique auto-generated URL per branch |
+
+**Preview deployments** are how we review each other's work before it goes live. When you open a PR on GitHub, Vercel posts the preview URL as a check — click it to see the branch running on a real server without touching production.
+
+A few gotchas:
+- Preview URLs are **publicly accessible** — anyone with the link can view them
+- They use the **same Supabase database as production** — changes you make on a preview (adding bills, editing property data) will show up in production too. Keep that in mind during testing.
+- The preview URL updates automatically every time you push a new commit to that branch
+
+---
+
 ## Roadmap & Action Items
 
 ### Auth
