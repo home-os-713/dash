@@ -42,19 +42,22 @@ The app is fully live: sign-up → email confirmation → dashboard → edit val
 - **Next.js 16** (App Router, TypeScript) — full-stack framework
 - **Supabase** — auth (email/password) + PostgreSQL database
 - **Vercel** — deployment (auto-deploys on push to `main`)
-- **Vanilla CSS** in `app/globals.css` — copied directly from the prototype, no Tailwind
+- **Vanilla CSS** in `app/globals.css` — used in `/dashboard`. DO NOT refactor to Tailwind
+- **Tailwind CSS v4** + **shadcn/ui** + **recharts** + **lucide-react** — used in `/homeos` (partner's prototype page)
 
 ## Project structure
 ```
 app/
   dashboard/page.tsx   # Main dashboard — state management + all Supabase reads/writes
+  homeos/page.tsx      # Partner's prototype page — multi-property vision, all mock data, Tailwind + recharts
   login/page.tsx       # Email/password sign-in
   signup/page.tsx      # Registration + email confirmation flow
   auth/callback/       # Handles Supabase email confirmation code exchange
-  globals.css          # All styles — DO NOT refactor to Tailwind
+  globals.css          # All styles for /dashboard — DO NOT refactor to Tailwind
 proxy.ts               # Auth guard — redirects unauthenticated users to /login
 lib/
   types.ts             # Shared types: DashboardState, Bill, DEFAULT_STATE, fmt()
+  utils.ts             # cn() helper for Tailwind class merging (used by /homeos)
   supabase/
     client.ts          # Browser Supabase client (use in 'use client' components)
     server.ts          # Server Supabase client (use in server components/routes)
@@ -67,6 +70,9 @@ components/
   RentalCard.tsx       # Rental income breakdown
   SpendingChart.tsx    # Horizontal bar chart
   Modal.tsx            # Reusable modal wrapper
+  ui/
+    card.tsx           # shadcn Card component (used by /homeos)
+    badge.tsx          # shadcn Badge component (used by /homeos)
 ```
 
 ## Database schema (Supabase project: feorwntlkwhwrsehmjmd)
@@ -87,8 +93,8 @@ One property per user for now. Multi-property support is a future consideration.
    - **When adding a new deploy URL, always add it to Supabase redirect URLs or auth will break**
 
 ## Key decisions & gotchas
-- **CSS**: Keep as-is in `globals.css`. Warm whites, subtle borders, no dark mode. Don't introduce Tailwind.
-- **Charts**: Inline SVG — no chart library. EquityCard and SpendingChart compute values inline.
+- **CSS split**: `/dashboard` uses vanilla CSS in `globals.css` (warm whites, no dark mode) — keep as-is. `/homeos` uses Tailwind v4. Don't mix them.
+- **Charts**: `/dashboard` uses inline SVG — no chart library. `/homeos` uses recharts (AreaChart, BarChart).
 - **Analytics section**: Removed from the prototype intentionally — keeping the dashboard lean. Revisit once real data sources are connected.
 - **State management**: `useReducer` in `app/dashboard/page.tsx`. Each save dispatches to local state AND upserts to Supabase immediately — no separate save button.
 - **`proxy.ts`**: Next.js 16 renamed `middleware.ts` → `proxy.ts` and the export `middleware` → `proxy`. Don't revert or rename.
@@ -121,5 +127,6 @@ After adding a new custom domain or Vercel preview URL, add `/auth/callback` for
 - **Mortgage servicer APIs** — pull live balance, payment history, escrow
 - **Email integration (Gmail/Outlook)** — scan property-related emails (utility bills, HOA notices, contractor quotes, mortgage statements) and extract action items + due dates. Gmail API fetches emails → Claude API parses unstructured content into structured data (amount, due date, action required) → writes to Supabase. Implement as a Next.js API route or Supabase edge function.
 - **Analytics & insights section** — re-add once real data sources feed it
-- **Multi-property support** — current model is one property per user
+- **Multi-property support** — current model is one property per user. `/homeos` prototypes this with mock data (2 properties: Phoenix AZ + Puerto Vallarta MX)
+- **Connect /homeos to real data** — currently all hardcoded mock data; needs Supabase integration once DB schema supports multi-property
 - **Vercel Pro** — if partner needs shared Vercel dashboard access
