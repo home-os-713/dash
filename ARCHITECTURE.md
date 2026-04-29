@@ -192,7 +192,7 @@ components/
 
 ## Planned Next Steps
 
-- **Connect /homeos to real data** — replace mock data with Supabase reads; requires multi-property DB schema
+- **Merge /dashboard and /homeos** — combine the best UI/features from /homeos with the real data layer from /dashboard into a single unified page. Requires choosing a styling system (Tailwind vs vanilla CSS) and extending the DB schema for multi-property support. /homeos can then be removed.
 - **Multi-property support** — extend DB schema (properties table currently one-per-user)
 - **Google + Apple sign-in** — OAuth via Supabase (Auth → Providers)
 - **Zillow API** — auto-fill property value and neighborhood comps

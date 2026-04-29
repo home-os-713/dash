@@ -128,5 +128,5 @@ After adding a new custom domain or Vercel preview URL, add `/auth/callback` for
 - **Email integration (Gmail/Outlook)** — scan property-related emails (utility bills, HOA notices, contractor quotes, mortgage statements) and extract action items + due dates. Gmail API fetches emails → Claude API parses unstructured content into structured data (amount, due date, action required) → writes to Supabase. Implement as a Next.js API route or Supabase edge function.
 - **Analytics & insights section** — re-add once real data sources feed it
 - **Multi-property support** — current model is one property per user. `/homeos` prototypes this with mock data (2 properties: Phoenix AZ + Puerto Vallarta MX)
-- **Connect /homeos to real data** — currently all hardcoded mock data; needs Supabase integration once DB schema supports multi-property
+- **Merge /dashboard and /homeos into one page** — take the best UI/features from /homeos and the real Supabase data layer from /dashboard. Once merged, /homeos can be deleted. Requires agreeing on styling direction (Tailwind vs vanilla CSS) and extending the DB schema for multi-property support.
 - **Vercel Pro** — if partner needs shared Vercel dashboard access

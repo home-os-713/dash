@@ -101,11 +101,15 @@ A few gotchas:
 
 ## Design feedback & open questions
 
-The `/homeos` page is a good prototype of the product vision — it covers multi-property, utility tracking, compliance, and a health score. A few things to align on as a team:
+The `/homeos` page is a good prototype of the product vision — it covers multi-property, utility tracking, compliance, and a health score. The mock/hardcoded data is intentional and temporary.
 
-1. **Styling direction** — `/dashboard` uses vanilla CSS, `/homeos` uses Tailwind. At some point we should pick one and unify. Tailwind scales better; vanilla is simpler. Decision needed before we build more UI.
-2. **Mock data** — `/homeos` is hardcoded with fake properties. The immediate next step is wiring it to Supabase so logged-in users see their actual data. This also requires extending the DB schema to support multiple properties per user.
-3. **Routing** — currently `/homeos` is a separate page linked from the dashboard. We should decide: does it replace `/dashboard` eventually, or live alongside it?
+**The agreed next step: merge both pages into one.**
+Take the best visual design and features from `/homeos` and the real Supabase data layer from `/dashboard`, and combine them into a single unified page. Once merged, `/homeos` can be removed.
+
+Things to figure out during the merge:
+1. **Styling direction** — `/dashboard` uses vanilla CSS, `/homeos` uses Tailwind. Pick one for the merged page. Tailwind scales better long-term; vanilla CSS is simpler. Decide before writing new UI.
+2. **Multi-property DB schema** — `/homeos` shows multiple properties per user. The current DB only supports one property per user. The schema will need extending before the merged page can support this.
+3. **Which features to bring over** — utility charts, compliance tracker, health score, and action items from `/homeos` are all candidates. Prioritize based on what real data sources are available first.
 
 ---
 
