@@ -10,9 +10,10 @@
 
 A personal property management web app. Homeowners sign up, enter their property details (mortgage, equity, bills, rental income), and track their finances over time. Each user has their own account and their data persists across sessions and devices.
 
-There are currently two pages:
-- **`/dashboard`** — the live product. Supabase-backed, vanilla CSS, all real data.
-- **`/homeos`** — a design prototype. Mock data, Tailwind + shadcn + recharts. Linked from the dashboard via "HomeOS →" button. Next step is wiring it to real data.
+There are currently three pages:
+- **`/dashboard`** — the original live product. Supabase-backed, vanilla CSS, all real data. Kept as reference.
+- **`/homeos`** — initial design prototype. Mock data, Tailwind + shadcn + recharts. Kept as reference.
+- **`/v0`** — the merged direction. Portfolio overview → property detail → financials drill-down. Tailwind + shadcn + recharts. Currently all hardcoded; needs DB schema change before real data wires in.
 
 ---
 
@@ -103,13 +104,39 @@ A few gotchas:
 
 The `/homeos` page is a good prototype of the product vision — it covers multi-property, utility tracking, compliance, and a health score. The mock/hardcoded data is intentional and temporary.
 
-**The agreed next step: merge both pages into one.**
-Take the best visual design and features from `/homeos` and the real Supabase data layer from `/dashboard`, and combine them into a single unified page. Once merged, `/homeos` can be removed.
+**Status update: `/v0` rebuilt around a sharper product thesis.**
 
-Things to figure out during the merge:
-1. **Styling direction** — `/dashboard` uses vanilla CSS, `/homeos` uses Tailwind. Pick one for the merged page. Tailwind scales better long-term; vanilla CSS is simpler. Decide before writing new UI.
-2. **Multi-property DB schema** — `/homeos` shows multiple properties per user. The current DB only supports one property per user. The schema will need extending before the merged page can support this.
-3. **Which features to bring over** — utility charts, compliance tracker, health score, and action items from `/homeos` are all candidates. Prioritize based on what real data sources are available first.
+After a strategy round (full devil's-advocate write-up in chat history; key conclusions below), `/v0` was rebuilt to demo a specific positioning instead of being a generic dashboard:
+
+> **Positioning:** *Every property bill, every property, in one place — paid on time, no thinking.*
+
+**Why this positioning (revised after first user demo):** The earlier "we save you money" framing didn't land — savings claims with mock data felt vague and untrusted. The simpler, undeniable promise — **one inbox for every bill across every property, with autopay status and what needs you front-and-center** — communicates value in 5 seconds without requiring the user to believe a future-tense claim. Audit/savings comes later as a real number from real data, not a headline.
+
+**Competitive gap (verified via scan):** Stessa is free but **passive tracking** (no bill pay, no audit, no autopay). PMS tools (Hostfully, Hospitable) sit alongside, not on top of, the bill stack. Doxo/Prism do bill aggregation but aren't property-aware. Truebill does consumer subscription audit but isn't property-keyed. **No one does bill-by-property aggregation + payment + status for owner-operators with 2–10 properties.** That's the wedge.
+
+**Target user (entry niche):** STR hosts with 2–10 properties. High willingness to pay (business expense), already paying for software, professionalized enough to value automation over tracking.
+
+**Pricing target (not shown in demo):** $29/mo for ≤3 properties, $49/mo unlimited, with savings guarantee.
+
+**Pages in `/v0`:**
+- `/v0` — Portfolio overview. Hero: *"N bills across M properties · X on autopay · Y need attention."* One sentence. Below it: a "What needs you this week" link to inbox, then property cards with bill counts, autopay ratio, and net.
+- `/v0/inbox` — Cross-property action hub. Hero: "N things need you this week." **Already handled** section (autopay receipts + completed admin tasks — no dollar claims, just receipts). Filter tabs (all / urgent / soon / review / bookings). **From your inbox** (AI-extracted bills awaiting confirmation).
+- `/v0/[id]` — Property detail. Hero: *"N bills · X on autopay · Y need attention"* + total due. Needs-your-attention card (action items). Bills front and center, sorted by status. Utility chart + financial summary side-by-side. STR bookings preview.
+- `/v0/[id]/bookings` — Per-stay net economics (gross → fees → taxes → net to you), bar chart, upcoming + recent.
+- `/v0/[id]/financials` — Full P&L with categorized expenses, mortgage detail with rate, equity donut, booking economics.
+
+Every page is labeled **"Simulated demo data"** at the top — important for honest user demos.
+
+Both `/dashboard` and `/homeos` are kept as reference.
+
+**New: `DECISION_LOG.md`** captures the full thinking behind `/v0` — the 5 rounds of strategy iteration, the devil's-advocate critique that surfaced the wedge, the user-feedback round that killed the "savings" framing, and what was kept/dropped/why. It's referenced from `CLAUDE.md` so any AI assistant (yours or mine) reading the repo gets the reasoning context, not just the diff. **Read or update it whenever you make a significant strategic or design decision in `/v0`.**
+
+**Open partner discussion items:**
+1. **DB schema change for multi-property** — the current DB is one-property-per-user. `/v0` is hardcoded with two mock properties to show the direction. We need to decide: extend the schema (`properties` becomes truly many-per-user; bills/utilities/bookings keyed by property_id) and migrate the existing single row?
+2. **Validate the positioning before going further.** Show `/v0` to 5 STR hosts. Specifically test: does "Saved $X this month" + "Approve & do it" agent-style recommendations get a different reaction than a tracking dashboard would? If yes → keep building this direction and start work on the actual integrations (email parsing, bill audit logic). If no → pivot the framing.
+3. **Real-data wiring sequence.** When we go: 1) Supabase property + bills first (already partially built), 2) Email parsing for bill ingestion (Gmail OAuth, Claude API for extraction), 3) Bill audit logic (compare bills MoM, detect anomalies), 4) Autopay integration (likely manual setup workflow + reminders, true autopay-on-our-behalf is far future), 5) Tax categorization (rule-based, then ML).
+4. **Recommendations engine.** Today: hardcoded mock cards. Tomorrow: rule-based (e.g., "if no autopay AND last 3 bills paid 1–4 days before due → suggest autopay"). Long-term: Claude-driven, looking at bill history + market rates + tax law.
+5. **Decommission `/dashboard` and `/homeos`** once `/v0` is wired and validated.
 
 ---
 
@@ -129,3 +156,4 @@ Things to figure out during the merge:
 | `CLAUDE.md` | Full technical context for Claude Code — stack, file structure, DB schema, gotchas |
 | `ARCHITECTURE.md` | Visual diagrams (system architecture, auth flow, data model, request flow) |
 | `PARTNER_BRIEFING.md` | This file — TL;DR for collaborators |
+| `DECISION_LOG.md` | Reasoning history behind `/v0` — strategy rounds, dead ends, what's kept/dropped and why. Auto-loaded into AI assistants via `CLAUDE.md`. |

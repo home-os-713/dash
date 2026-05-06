@@ -130,3 +130,6 @@ After adding a new custom domain or Vercel preview URL, add `/auth/callback` for
 - **Multi-property support** — current model is one property per user. `/homeos` prototypes this with mock data (2 properties: Phoenix AZ + Puerto Vallarta MX)
 - **Merge /dashboard and /homeos into one page** — take the best UI/features from /homeos and the real Supabase data layer from /dashboard. Once merged, /homeos can be deleted. Requires agreeing on styling direction (Tailwind vs vanilla CSS) and extending the DB schema for multi-property support.
 - **Vercel Pro** — if partner needs shared Vercel dashboard access
+
+## Reasoning history
+@DECISION_LOG.md — strategy and design iteration log for `/v0`. Read before extending or redesigning `/v0`.

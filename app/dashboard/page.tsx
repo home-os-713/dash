@@ -165,6 +165,7 @@ export default function DashboardPage() {
   return (
     <div className="dash">
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
+        <Link href="/v0" className="edit-btn">v0 →</Link>
         <Link href="/homeos" className="edit-btn">HomeOS →</Link>
         <button className="edit-btn" onClick={handleSignOut}>Sign out</button>
       </div>
