@@ -461,7 +461,7 @@ function MockPropertyDetail({ id }: { id: string }) {
               <span className="text-sm font-bold text-emerald-400">{fmtCurrency(fin.noi)}</span>
             </div>
             <Link
-              href={`/v0/${id}/financials`}
+              href={`/dashboard/${id}/financials`}
               className="flex items-center justify-between mt-2 text-xs text-[#C7BBA3] hover:text-white transition-colors group"
             >
               <span>Full P&amp;L · mortgage · equity</span>
@@ -498,7 +498,7 @@ function MockPropertyDetail({ id }: { id: string }) {
               </div>
             ))}
             <Link
-              href={`/v0/${id}/bookings`}
+              href={`/dashboard/${id}/bookings`}
               className="flex items-center justify-between mt-2 pt-3 border-t border-[#4B5436]/15 text-xs text-[#C7BBA3] hover:text-white"
             >
               <span>All stays &amp; net per booking</span>
@@ -545,7 +545,7 @@ export default function PropertyDetailPage({
       <header className="sticky top-0 z-50 bg-[#4B5436]/95 backdrop-blur-xl border-b border-[#4B5436]/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/v0" className="flex items-center gap-2 text-white/50 hover:text-white text-sm">
+            <Link href="/dashboard" className="flex items-center gap-2 text-white/50 hover:text-white text-sm">
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Portfolio</span>
             </Link>
@@ -561,7 +561,7 @@ export default function PropertyDetailPage({
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href="/v0/inbox"
+              href="/dashboard/inbox"
               className="text-xs text-white/60 hover:text-white px-3 py-1.5 rounded-lg border border-[#C7BBA3]/15 hidden sm:flex items-center gap-2"
             >
               <Inbox className="w-3.5 h-3.5" />

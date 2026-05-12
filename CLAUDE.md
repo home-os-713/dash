@@ -65,13 +65,13 @@ The app is fully live: sign-up → email confirmation → dashboard → edit val
 ## Project structure
 ```
 app/
-  dashboard/page.tsx         # Original dashboard — real Supabase data, vanilla CSS, kept as reference
-  homeos/page.tsx            # Partner's prototype page — all mock data, kept as reference
-  v0/page.tsx                # Portfolio overview — real properties from Supabase, falls back to mock
-  v0/[id]/page.tsx           # Property detail — UUID id → real data, "phoenix"/"pvr" → mock demo
-  v0/[id]/financials/page.tsx
-  v0/[id]/bookings/page.tsx
-  v0/inbox/page.tsx
+  dashboard/page.tsx             # Portfolio overview — real properties from Supabase, falls back to mock
+  dashboard/[id]/page.tsx        # Property detail — UUID id → real data, "phoenix"/"pvr" → mock demo
+  dashboard/[id]/financials/page.tsx
+  dashboard/[id]/bookings/page.tsx
+  dashboard/inbox/page.tsx
+  legacy/dashboard/page.tsx      # Original single-property dashboard — kept for reference only
+  legacy/homeos/page.tsx         # Partner's prototype page — kept for reference only
   login/page.tsx
   signup/page.tsx
   auth/callback/             # Handles Supabase email confirmation code exchange

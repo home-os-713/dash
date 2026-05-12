@@ -34,7 +34,7 @@ export default function BookingsPage({ params }: { params: Promise<{ id: string 
     <div className="min-h-screen bg-[#2B2B2B] text-white">
       <header className="sticky top-0 z-50 bg-[#4B5436]/95 backdrop-blur-xl border-b border-[#4B5436]/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
-          <Link href={`/v0/${id}`} className="flex items-center gap-2 text-white/50 hover:text-white text-sm">
+          <Link href={`/dashboard/${id}`} className="flex items-center gap-2 text-white/50 hover:text-white text-sm">
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">{property.name}</span>
           </Link>

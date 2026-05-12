@@ -52,7 +52,7 @@ export default function InboxPage() {
       <header className="sticky top-0 z-50 bg-[#4B5436]/95 backdrop-blur-xl border-b border-[#4B5436]/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/v0" className="flex items-center gap-2 text-white/50 hover:text-white text-sm">
+            <Link href="/dashboard" className="flex items-center gap-2 text-white/50 hover:text-white text-sm">
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Portfolio</span>
             </Link>
@@ -119,7 +119,7 @@ export default function InboxPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium leading-tight">{h.label}</p>
                       <Link
-                        href={`/v0/${property.id}`}
+                        href={`/dashboard/${property.id}`}
                         className="inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-[#C7BBA3] bg-white/[0.04] border border-[#4B5436]/15 rounded-md px-1.5 py-0.5"
                       >
                         <property.icon className="w-3 h-3" />
@@ -176,7 +176,7 @@ export default function InboxPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium leading-tight">{action.label}</p>
                       <Link
-                        href={`/v0/${property.id}`}
+                        href={`/dashboard/${property.id}`}
                         className="inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-[#C7BBA3] transition-colors bg-white/[0.04] border border-[#4B5436]/15 rounded-md px-1.5 py-0.5"
                       >
                         <property.icon className="w-3 h-3" />
@@ -239,7 +239,7 @@ export default function InboxPage() {
                       <span className="text-[10px] text-white/40">{email.from}</span>
                       <span className="text-white/15 text-[10px]">·</span>
                       <Link
-                        href={`/v0/${property.id}`}
+                        href={`/dashboard/${property.id}`}
                         className="inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-[#C7BBA3]"
                       >
                         <property.icon className="w-3 h-3" />
