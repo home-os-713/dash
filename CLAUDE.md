@@ -10,6 +10,15 @@ Read these files before writing any code:
 
 These three files are the source of truth. If something isn't in them, ask before assuming.
 
+## Keeping context up to date (mandatory)
+**Every commit that adds a page, changes the stack, or makes a product/architecture decision must also update the relevant context files.** This is not optional — stale docs break the next session for both collaborators and any AI assistant picking up the work.
+
+- New page or route → update `CLAUDE.md` (project structure) and `PARTNER_BRIEFING.md` (page inventory)
+- New dependency → update `CLAUDE.md` (stack section)
+- Product/strategy decision → add a round to `DECISION_LOG.md`
+- DB schema change → update `CLAUDE.md` (database schema section)
+- New gotcha or lesson learned → update `CLAUDE.md` (key decisions & gotchas)
+
 ## What this is
 A personal property management web app. Users sign up, add their property details (mortgage, bills, rental income), and track finances over time. Started as a single HTML prototype (`homeowner_dash.html`) and converted to a full-stack Next.js app with auth, a real database, and a live deployment.
 

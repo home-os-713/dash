@@ -182,10 +182,12 @@ A simpler, undeniable promise the demo can actually deliver in 5 seconds without
 
 ---
 
-## How to extend this log
+## How to extend this log (mandatory)
 
-When you make a significant strategic or design decision in `/v0`:
-- Add a new "Round N" section above
+**Any commit that changes product direction, repositions a feature, or makes a meaningful design/architecture decision must add a new entry here.** This is not a nice-to-have — it's how both collaborators and future Claude sessions stay aligned without re-litigating past decisions.
+
+When adding an entry:
+- Add a new "Round N" section at the bottom
 - Capture what you tried, what worked, what failed, and why
 - **Don't delete old rounds** — the dead ends are the most valuable part for future contributors
 

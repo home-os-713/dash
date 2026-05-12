@@ -143,8 +143,8 @@ Both `/dashboard` and `/homeos` are kept as reference.
 ## Collaboration norms
 
 - **Work in branches, not directly on `main`** — open a PR so the other person can review before merging.
-- **Update the context docs when you make significant changes** — if you add a new page, dependency, or architectural decision, update `CLAUDE.md`, `ARCHITECTURE.md`, and this file. These docs are how we (and any AI assistant) stay in sync across sessions.
-- **Generate context for AI tools** — if you use Claude Code or another AI assistant in your session, save any important decisions or context it surfaces back into `CLAUDE.md`. Think of it as a shared brain for the project.
+- **Update the context docs on every meaningful commit — this is mandatory.** If you add a page, change a dependency, or make a product decision, the relevant doc must be updated in the same commit. `CLAUDE.md` for stack/structure changes, `DECISION_LOG.md` for strategy/design decisions, this file for page inventory. Stale docs break the next session for both collaborators.
+- **Generate context for AI tools** — if you use Claude Code or another AI assistant in your session, save any important decisions or context it surfaces back into `CLAUDE.md` and `DECISION_LOG.md`. Think of it as a shared brain for the project.
 - **`.env.local` is never committed** — get the Supabase keys from Jaime directly. Vercel already has them set for all environments so deploys work automatically.
 
 ---
