@@ -172,13 +172,37 @@ A simpler, undeniable promise the demo can actually deliver in 5 seconds without
 
 ---
 
+## Round 6 — Multi-property DB migration + Rentcast integration (May 2026)
+
+**Decision: wire `/v0` to real Supabase data and replace the Zillow placeholder with Rentcast.**
+
+### What was built
+
+- **SQL migration** (`supabase/001_multi_property.sql`): drops the `user_id` unique constraint on `properties`, extends `properties` and `bills` with v0 fields, adds `bookings`, `utility_months`, `action_items` tables — all with RLS policies.
+- **`lib/v0/db.ts`**: TypeScript types for the extended schema (`DbProperty`, `DbBill`, `DbPropertyWithBills`) and Supabase query helpers (`listUserProperties`, `getPropertyById`, `insertProperty`, `computePropertyHealth`, `computeNOI`).
+- **`app/api/property-lookup/route.ts`**: server-side proxy to Rentcast API. Hits `/v1/properties` (details) + `/v1/avm/value` (estimated value) in parallel. Requires `RENTCAST_API_KEY` env var.
+- **`app/v0/page.tsx`**: loads real properties from Supabase via `listUserProperties`. Shows real cards when properties exist; falls back to mock cards + "Add your first property" banner when none. Includes a full **Add Property modal** with address lookup button (calls `/api/property-lookup`).
+- **`app/v0/[id]/page.tsx`**: splits on UUID regex. UUID IDs → query Supabase → `RealPropertyDetail` component. Demo slugs ("phoenix", "pvr") → `MockPropertyDetail` (unchanged). This lets the demo remain working indefinitely alongside real data.
+- **`app/dashboard/page.tsx`**: minor fix — changed `.single()` to `.order().limit(1)` so it doesn't break when a user has multiple properties.
+
+### Why Rentcast instead of Zillow
+
+Zillow's public API (ZWSID) was shut down in April 2021. No publicly accessible Zillow endpoint exists. Rentcast (rentcast.io) is the closest direct equivalent: free tier (50 req/mo), US property AVM, same data shape as Zestimate. If the project grows past 50 lookups/month, upgrade to a paid Rentcast plan or swap the `/api/property-lookup` route to ATTOM.
+
+### What stays mock
+
+`/v0/inbox`, `/v0/[id]/financials`, `/v0/[id]/bookings` still use mock data from `lib/v0/mockData.ts`. Real wiring of those pages requires: (1) bills CRUD UI, (2) email parsing for bill ingestion, (3) bookings sync from Airbnb/VRBO. Do not delete mockData.ts until all three are wired.
+
+---
+
 ## Open questions (carried forward)
 
-1. **DB schema change for multi-property** — needs partner alignment before wiring real data. Current schema is one-property-per-user; v0 is hardcoded with two mock properties.
-2. **Real-data wiring sequence:** (1) Supabase property + bills, (2) email parsing for bill ingestion (Gmail OAuth + Claude API extraction), (3) bill audit logic (compare bills MoM, detect anomalies), (4) autopay setup workflow (likely manual setup + reminders before true autopay-on-our-behalf), (5) tax categorization (rule-based, then ML).
-3. **Pricing validation** — $29/$49/mo target needs 5 STR-host interviews before committing.
-4. **Show `/v0` to 5 STR hosts before building integrations.** Test specifically: does the simpler "one place for every bill" framing land? If yes → start integration work. If no → pivot the framing again.
+1. **Bills CRUD on property detail** — users can now create properties but can't add/edit bills through the UI. Next logical UI step is a "Add bill" modal on `/v0/[id]`.
+2. **Email parsing for bill ingestion** — Gmail OAuth + Claude API extraction → writes to `bills` table. This is the highest-value integration (replaces manual bill entry entirely).
+3. **Real-data wiring for inbox + financials + bookings** — blocked on bills CRUD + bookings ingestion.
+4. **Pricing validation** — $29/$49/mo target needs 5 STR-host interviews before committing.
 5. **Decommission `/dashboard` and `/homeos`** once `/v0` is wired and validated.
+6. **Rentcast API key setup** — user needs to sign up at rentcast.io, get API key, and set `RENTCAST_API_KEY` in both `.env.local` and Vercel env vars.
 
 ---
 

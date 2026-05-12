@@ -48,11 +48,13 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: property } = await supabase
+      const { data: propertyRows } = await supabase
         .from('properties')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .order('updated_at', { ascending: true })
+        .limit(1);
+      const property = propertyRows?.[0] ?? null;
 
       if (property) {
         setPropertyId(property.id);

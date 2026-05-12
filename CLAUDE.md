@@ -65,40 +65,51 @@ The app is fully live: sign-up → email confirmation → dashboard → edit val
 ## Project structure
 ```
 app/
-  dashboard/page.tsx   # Main dashboard — state management + all Supabase reads/writes
-  homeos/page.tsx      # Partner's prototype page — multi-property vision, all mock data, Tailwind + recharts
-  login/page.tsx       # Email/password sign-in
-  signup/page.tsx      # Registration + email confirmation flow
-  auth/callback/       # Handles Supabase email confirmation code exchange
-  globals.css          # All styles for /dashboard — DO NOT refactor to Tailwind
-proxy.ts               # Auth guard — redirects unauthenticated users to /login
+  dashboard/page.tsx         # Original dashboard — real Supabase data, vanilla CSS, kept as reference
+  homeos/page.tsx            # Partner's prototype page — all mock data, kept as reference
+  v0/page.tsx                # Portfolio overview — real properties from Supabase, falls back to mock
+  v0/[id]/page.tsx           # Property detail — UUID id → real data, "phoenix"/"pvr" → mock demo
+  v0/[id]/financials/page.tsx
+  v0/[id]/bookings/page.tsx
+  v0/inbox/page.tsx
+  login/page.tsx
+  signup/page.tsx
+  auth/callback/             # Handles Supabase email confirmation code exchange
+  api/
+    property-lookup/route.ts # Rentcast API proxy — fetches estimated property value by address
+    globals.css              # All styles for /dashboard — DO NOT refactor to Tailwind
+proxy.ts                     # Auth guard (Next.js 16: proxy.ts, export proxy, not middleware)
 lib/
-  types.ts             # Shared types: DashboardState, Bill, DEFAULT_STATE, fmt()
-  utils.ts             # cn() helper for Tailwind class merging (used by /homeos)
+  types.ts                   # DashboardState, Bill types for /dashboard
+  v0/
+    mockData.ts              # All mock data + helpers for /v0 demo mode — DO NOT delete
+    db.ts                    # DbProperty, DbBill types + Supabase query helpers for /v0
+  utils.ts                   # cn() helper for Tailwind class merging
   supabase/
-    client.ts          # Browser Supabase client (use in 'use client' components)
-    server.ts          # Server Supabase client (use in server components/routes)
+    client.ts                # Browser Supabase client (use in 'use client' components)
+    server.ts                # Server Supabase client (use in route handlers / server components)
+supabase/
+  001_multi_property.sql     # Run this in Supabase SQL Editor to enable multi-property
 components/
-  PropertyHeader.tsx   # Property name, address, edit modal
-  MetricsGrid.tsx      # 4 overview metric cards
-  MortgageCard.tsx     # Mortgage details + progress bar
-  EquityCard.tsx       # SVG donut chart
-  BillsList.tsx        # Bills list + add bill modal
-  RentalCard.tsx       # Rental income breakdown
-  SpendingChart.tsx    # Horizontal bar chart
-  Modal.tsx            # Reusable modal wrapper
-  ui/
-    card.tsx           # shadcn Card component (used by /homeos)
-    badge.tsx          # shadcn Badge component (used by /homeos)
+  ui/card.tsx  ui/badge.tsx  # shadcn components used by /v0 and /homeos
+  PropertyHeader.tsx  MetricsGrid.tsx  MortgageCard.tsx  EquityCard.tsx
+  BillsList.tsx  RentalCard.tsx  SpendingChart.tsx  Modal.tsx   # /dashboard only
 ```
 
 ## Database schema (Supabase project: feorwntlkwhwrsehmjmd)
 ```sql
-properties (id, user_id, name, address, prop_val, mort_pay, mort_bal, mort_orig, rent, rent_bills, updated_at)
-bills (id, property_id, name, amount, due_date, paid)
+-- Core tables (extended for multi-property)
+properties (id, user_id, name, address, location, type, prop_val, mort_pay, mort_bal, mort_orig, mort_rate, rent, rent_bills, income, occupancy, updated_at)
+bills (id, property_id, name, amount, due_date, paid, category, autopay, status, status_label, source)
+
+-- v0 tables (added in migration 001)
+bookings (id, property_id, platform, guest, check_in, check_out, nights, gross, platform_fee, cleaning_fee, taxes, net, status, created_at)
+utility_months (id, property_id, month, electric, water, gas, solar, budget)
+action_items (id, property_id, kind, priority, label, detail, category, due_in, amount, cta_label, created_at)
 ```
 Row-level security is enabled — users can only access their own rows.
-One property per user for now. Multi-property support is a future consideration.
+**Multi-property is now supported** — unique constraint on user_id was dropped in migration 001.
+Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQL Editor before using /v0 with real data.
 
 ## Auth flow
 1. User signs up → `emailRedirectTo` is set to `window.location.origin + /auth/callback` (works on both localhost and prod)
@@ -110,21 +121,27 @@ One property per user for now. Multi-property support is a future consideration.
    - **When adding a new deploy URL, always add it to Supabase redirect URLs or auth will break**
 
 ## Key decisions & gotchas
-- **CSS split**: `/dashboard` uses vanilla CSS in `globals.css` (warm whites, no dark mode) — keep as-is. `/homeos` uses Tailwind v4. Don't mix them.
-- **Charts**: `/dashboard` uses inline SVG — no chart library. `/homeos` uses recharts (AreaChart, BarChart).
+- **CSS split**: `/dashboard` uses vanilla CSS in `globals.css` (warm whites, no dark mode) — keep as-is. `/homeos` and `/v0` use Tailwind v4. Don't mix them.
+- **Charts**: `/dashboard` uses inline SVG — no chart library. `/v0` uses recharts (AreaChart, BarChart).
 - **Analytics section**: Removed from the prototype intentionally — keeping the dashboard lean. Revisit once real data sources are connected.
 - **State management**: `useReducer` in `app/dashboard/page.tsx`. Each save dispatches to local state AND upserts to Supabase immediately — no separate save button.
 - **`proxy.ts`**: Next.js 16 renamed `middleware.ts` → `proxy.ts` and the export `middleware` → `proxy`. Don't revert or rename.
 - **Email redirect**: `signup/page.tsx` uses `window.location.origin` for the confirmation redirect — this is intentional so it works on both localhost and production without hardcoding.
 - **Vercel Hobby plan**: Jaime's account. Partners collaborate via GitHub — push access to the repo triggers deploys. Vercel Pro needed for shared team dashboards.
 - **Shared DB**: localhost and production both point to the same Supabase instance — data created locally shows up in production and vice versa.
+- **Multi-property**: The `user_id` unique constraint was dropped in migration 001. `/dashboard` still uses the oldest property per user (`.order('updated_at', ascending: true).limit(1)`). New properties created via `/v0` get fresh rows.
+- **UUID routing in /v0**: `app/v0/[id]/page.tsx` uses a UUID regex to detect real DB IDs vs. demo IDs ("phoenix"/"pvr"). UUID → Supabase query; demo slug → mock data. This lets the demo keep working even after real data is added.
+- **Rentcast (Zillow replacement)**: Zillow's public API shut down in 2021. `/api/property-lookup` proxies to Rentcast API for property value estimates. Requires `RENTCAST_API_KEY` (server-only env var). Without the key the lookup button returns a 503 and the user fills in value manually.
+- **Mock data preservation**: `lib/v0/mockData.ts` must not be deleted — it powers the demo mode for users with no real properties and the /inbox and /financials pages which aren't yet wired to real data.
 
 ## Environment variables
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://feorwntlkwhwrsehmjmd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<get from Supabase dashboard → Settings → API → anon public>
+RENTCAST_API_KEY=<get from https://app.rentcast.io → API Keys; free tier = 50 req/mo>
 ```
-Never commit `.env.local`. The same vars are set in Vercel → Project → Settings → Environment Variables.
+Never commit `.env.local`. Set all three in Vercel → Project → Settings → Environment Variables.
+`RENTCAST_API_KEY` is server-only (no `NEXT_PUBLIC_` prefix) — kept out of client bundles.
 
 ## Running locally
 ```bash
