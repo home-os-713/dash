@@ -2,6 +2,14 @@
 
 # Homeowner Dashboard — Project Context
 
+## Starting a new session
+Read these files before writing any code:
+1. `CLAUDE.md` (this file) — stack, structure, gotchas
+2. `DECISION_LOG.md` — product strategy and *why* things are built the way they are
+3. `PARTNER_BRIEFING.md` — current page inventory and collaboration norms
+
+These three files are the source of truth. If something isn't in them, ask before assuming.
+
 ## What this is
 A personal property management web app. Users sign up, add their property details (mortgage, bills, rental income), and track finances over time. Started as a single HTML prototype (`homeowner_dash.html`) and converted to a full-stack Next.js app with auth, a real database, and a live deployment.
 
