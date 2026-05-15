@@ -60,7 +60,8 @@ The app is fully live: sign-up → email confirmation → dashboard → edit val
 - **Supabase** — auth (email/password) + PostgreSQL database
 - **Vercel** — deployment (auto-deploys on push to `main`)
 - **Vanilla CSS** in `app/globals.css` — used in `/dashboard`. DO NOT refactor to Tailwind
-- **Tailwind CSS v4** + **shadcn/ui** + **recharts** + **lucide-react** — used in `/homeos` (partner's prototype page)
+- **Tailwind CSS v4** + **shadcn/ui** + **recharts** + **lucide-react** — used in `/dashboard` (main product)
+- **@dnd-kit/core** + **@dnd-kit/sortable** + **@dnd-kit/utilities** — drag-to-reorder on portfolio page
 
 ## Project structure
 ```
@@ -90,6 +91,7 @@ lib/
     server.ts                # Server Supabase client (use in route handlers / server components)
 supabase/
   001_multi_property.sql     # Run this in Supabase SQL Editor to enable multi-property
+  002_sort_order.sql         # Adds sort_order column to properties for drag-to-reorder
 components/
   ui/card.tsx  ui/badge.tsx  # shadcn components used by /v0 and /homeos
   PropertyHeader.tsx  MetricsGrid.tsx  MortgageCard.tsx  EquityCard.tsx
@@ -99,7 +101,7 @@ components/
 ## Database schema (Supabase project: feorwntlkwhwrsehmjmd)
 ```sql
 -- Core tables (extended for multi-property)
-properties (id, user_id, name, address, location, type, prop_val, mort_pay, mort_bal, mort_orig, mort_rate, rent, rent_bills, income, occupancy, updated_at)
+properties (id, user_id, name, address, location, type, prop_val, mort_pay, mort_bal, mort_orig, mort_rate, rent, rent_bills, income, occupancy, sort_order, updated_at)
 bills (id, property_id, name, amount, due_date, paid, category, autopay, status, status_label, source)
 
 -- v0 tables (added in migration 001)
@@ -133,6 +135,10 @@ Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQ
 - **UUID routing in /v0**: `app/v0/[id]/page.tsx` uses a UUID regex to detect real DB IDs vs. demo IDs ("phoenix"/"pvr"). UUID → Supabase query; demo slug → mock data. This lets the demo keep working even after real data is added.
 - **Rentcast (Zillow replacement)**: Zillow's public API shut down in 2021. `/api/property-lookup` proxies to Rentcast API for property value estimates. Requires `RENTCAST_API_KEY` (server-only env var). Without the key the lookup button returns a 503 and the user fills in value manually.
 - **Mock data preservation**: `lib/v0/mockData.ts` must not be deleted — it powers the demo mode for users with no real properties and the /inbox and /financials pages which aren't yet wired to real data.
+- **Drag-to-reorder**: Portfolio page uses `@dnd-kit` with `rectSortingStrategy` (handles 2-column grid). Grip handle appears on hover at card top-left. Order persists to `sort_order` column in Supabase. `listUserProperties` gracefully falls back to `updated_at` ordering if `sort_order` column doesn't exist yet (migration 002 not yet run).
+- **Rentcast caching**: `/api/property-lookup` returns a dev mock in `NODE_ENV !== 'production'` to avoid burning free-tier credits during development. In production, responses are cached for 30 days via `unstable_cache`.
+- **RealPropertyDetail**: Fully redesigned — equity SVG donut, mortgage progress bar, spending breakdown bars, bills list with Add bill modal, Edit property and Edit mortgage modals. All saves are optimistic (local state updated immediately, Supabase updated in background).
+- **After every change session**: provide user a summary + localhost link to the relevant page. This is a collaboration norm.
 
 ## Environment variables
 ```

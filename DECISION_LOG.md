@@ -195,6 +195,33 @@ Zillow's public API (ZWSID) was shut down in April 2021. No publicly accessible 
 
 ---
 
+## Round 7 — Property detail redesign + data input + drag-to-reorder (May 2026)
+
+### What was built
+
+**Property detail (`/dashboard/[id]`):**
+- `RealPropertyDetail` fully redesigned — now matches the visual richness of `legacy/dashboard` but in the HomeOS dark palette (`#2B2B2B`/`#353530`/`#4B5436`/`#C7BBA3`). Includes: equity SVG donut ring, mortgage progress bar, spending breakdown horizontal bars, 4-stat KPI grid, bills list with status colors.
+- Three edit modals added: **Edit property** (name/address/type/value/income), **Edit mortgage** (balance/original/payment/rate), **Add bill** (name/amount/due date/category/autopay/status). All saves are optimistic — local state updates immediately, Supabase write fires in the background.
+- `MockPropertyDetail` enhanced: utility mini-cards with MoM% badges, multi-series AreaChart (Electric/Water/Gas), domain-status pills.
+
+**Rentcast caching:**
+- Dev mock short-circuits the API entirely in `NODE_ENV !== 'production'` — no API credits burned during development.
+- Production responses cached 30 days via `unstable_cache`.
+
+**Bug fix — 404 on property card tap:**
+- Root cause: property card `href` was pointing to `/v0/${id}` (old route) instead of `/dashboard/${id}`. Two-line fix in `dashboard/page.tsx`.
+
+**Drag-to-reorder portfolio:**
+- Installed `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
+- Added `sort_order integer` column to `properties` (migration `supabase/002_sort_order.sql` — run manually).
+- Portfolio page wraps real property cards in `DndContext` + `SortableContext` (`rectSortingStrategy` handles the 2-column grid). Grip handle appears on hover at each card's top-left corner. On drag end, new `sort_order` values are batch-written to Supabase (fire-and-forget).
+- `listUserProperties` falls back gracefully to `updated_at` ordering if `sort_order` column doesn't exist yet — prevents data disappearing before migration is run.
+
+### Collaboration norm added
+After every change session: provide a short summary + localhost link to the relevant UI page. Noted in CLAUDE.md gotchas and now expected in all future sessions.
+
+---
+
 ## Open questions (carried forward)
 
 1. **Bills CRUD on property detail** — users can now create properties but can't add/edit bills through the UI. Next logical UI step is a "Add bill" modal on `/v0/[id]`.

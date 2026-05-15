@@ -36,6 +36,7 @@ Both legacy pages are accessible by URL but intentionally buried. Do not delete 
 | **Styling** | Tailwind CSS v4 + shadcn/ui | Used in `/dashboard` (main product). DO NOT mix with legacy vanilla CSS |
 | **Charts** | recharts | AreaChart (utility spend), BarChart (bookings) |
 | **Icons** | lucide-react | Throughout `/dashboard` |
+| **Drag-and-drop** | @dnd-kit/core + @dnd-kit/sortable | Portfolio page property reordering |
 | **Legacy styling** | Vanilla CSS (`globals.css`) | Used in `/legacy/dashboard` only — do not touch |
 
 ---
@@ -70,7 +71,7 @@ git push origin main   # → Vercel auto-deploys ✓
 
 ```sql
 properties  (id, user_id, name, address, location, type, prop_val, mort_pay, mort_bal,
-             mort_orig, mort_rate, rent, rent_bills, income, occupancy, updated_at)
+             mort_orig, mort_rate, rent, rent_bills, income, occupancy, sort_order, updated_at)
 bills       (id, property_id, name, amount, due_date, paid, category, autopay,
              status, status_label, source)
 bookings    (id, property_id, platform, guest, check_in, check_out, nights,
@@ -80,7 +81,12 @@ action_items   (id, property_id, kind, priority, label, detail, category,
                 due_in, amount, cta_label, created_at)
 ```
 
-Multi-property is live — users can add as many properties as they want. Migration SQL is in `supabase/001_multi_property.sql` (already run on the shared Supabase instance).
+Multi-property is live — users can add as many properties as they want.
+
+| Migration | Status | What it does |
+|---|---|---|
+| `supabase/001_multi_property.sql` | ✅ Applied | Multi-property schema, RLS policies |
+| `supabase/002_sort_order.sql` | ⚠️ Run when ready | Adds `sort_order` to `properties` for drag-to-reorder persistence |
 
 ---
 
@@ -101,17 +107,21 @@ Preview URLs use the same Supabase DB as production — data you create on a pre
 - ✅ Multi-property DB schema (migration 001 applied)
 - ✅ `/dashboard` loads real properties from Supabase
 - ✅ Add property modal with Rentcast address lookup (requires `RENTCAST_API_KEY`)
-- ✅ Property detail loads real bills from Supabase
+- ✅ Rentcast response cached 30 days in production; dev mock in local to avoid burning free tier
+- ✅ Property detail (`/dashboard/[id]`) loads real data from Supabase
+- ✅ **Edit property details modal** — name, address, location, type, value, income
+- ✅ **Edit mortgage modal** — balance, original amount, monthly payment, rate
+- ✅ **Add bill modal** — name, amount, due date, category, autopay toggle, status
+- ✅ Property detail visual overhaul — equity donut ring, mortgage progress bar, spending breakdown bars, KPI grid (HomeOS dark palette)
 - ✅ Demo mode — falls back to mock data when user has no real properties
+- ✅ **Drag-to-reorder properties** on portfolio page — grip handle top-left of each card, 2-column grid preserved, persists to `sort_order` in Supabase (requires migration 002)
 - ✅ Legacy pages moved to `/legacy/*`, main nav cleaned up
 
 ### Open — next logical steps (in order)
-1. **Add/edit bills UI** — users can create properties but can't add bills through the UI yet. Next step: "Add bill" modal on `/dashboard/[id]`.
-2. **Edit property** — no edit flow after initial creation.
-3. **Email parsing for bill ingestion** — Gmail OAuth + Claude API extraction → writes to `bills` table. Highest-value integration.
-4. **Property value lookup** — Zillow's API is dead (shut down 2021). Rentcast (`rentcast.io`) is the working alternative for US property value estimates. ATTOM is the option if property tax data is needed. Parked for now.
-5. **Bookings + utility data ingestion** — currently mock on the detail page. Needs Airbnb/VRBO sync or manual entry.
-6. **Decommission `/legacy/*`** — once `/dashboard` is validated with real data, delete the legacy pages.
+1. **Run migration 002** — `supabase/002_sort_order.sql` to persist drag-to-reorder order across sessions.
+2. **Email parsing for bill ingestion** — Gmail OAuth + Claude API extraction → writes to `bills` table. Highest-value integration (replaces manual bill entry).
+3. **Bookings + utility data ingestion** — currently mock on the detail page. Needs Airbnb/VRBO sync or manual entry.
+4. **Decommission `/legacy/*`** — once `/dashboard` is validated with real data, delete the legacy pages.
 
 ### Roadmap (further out)
 - Google / Apple Sign-In via Supabase OAuth

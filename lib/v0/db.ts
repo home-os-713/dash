@@ -18,6 +18,7 @@ export type DbProperty = {
   occupancy: number | null;
   rent: number | null;
   rent_bills: number | null;
+  sort_order: number | null;
   updated_at: string;
 };
 
@@ -44,13 +45,37 @@ type SupabaseClient = ReturnType<typeof createClient>;
 export async function listUserProperties(
   supabase: SupabaseClient
 ): Promise<DbPropertyWithBills[]> {
+  // Try ordering by sort_order first (requires migration 002).
+  // If the column doesn't exist yet, fall back to updated_at.
   const { data, error } = await supabase
     .from("properties")
     .select("*, bills(*)")
+    .order("sort_order", { ascending: true, nullsFirst: false })
     .order("updated_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    // Column likely missing — retry with just updated_at
+    const fallback = await supabase
+      .from("properties")
+      .select("*, bills(*)")
+      .order("updated_at", { ascending: false });
+    if (fallback.error) throw fallback.error;
+    return (fallback.data ?? []) as DbPropertyWithBills[];
+  }
+
   return (data ?? []) as DbPropertyWithBills[];
+}
+
+export async function updatePropertySortOrders(
+  supabase: SupabaseClient,
+  updates: { id: string; sort_order: number }[]
+): Promise<void> {
+  // Fire updates in parallel; ignore individual errors silently
+  await Promise.all(
+    updates.map(({ id, sort_order }) =>
+      supabase.from("properties").update({ sort_order }).eq("id", id)
+    )
+  );
 }
 
 export async function getPropertyById(

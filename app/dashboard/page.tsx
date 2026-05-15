@@ -14,16 +14,33 @@ import {
   X,
   Search,
   Loader2,
+  GripVertical,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { createClient } from "@/lib/supabase/client";
 import {
   type DbPropertyWithBills,
   type DbBill,
   listUserProperties,
   insertProperty,
+  updatePropertySortOrders,
   computePropertyHealth,
   computeNOI,
-  isDbId,
 } from "@/lib/v0/db";
 import {
   properties as mockProperties,
@@ -35,7 +52,6 @@ import {
   fmtCurrency,
   actionItems,
 } from "@/lib/v0/mockData";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 // ── Add Property form state ──────────────────────────────────────────────────
@@ -66,6 +82,136 @@ const emptyForm: PropertyForm = {
   mortRate: "",
 };
 
+// ── Sortable property card ───────────────────────────────────────────────────
+
+function SortablePropertyCard({ p }: { p: DbPropertyWithBills }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: p.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const bills = p.bills ?? [];
+  const health = computePropertyHealth(bills);
+  const noi = computeNOI(p, bills);
+  const propAutopay = bills.filter((b) => b.autopay).length;
+  const overdueBills = bills.filter((b) => b.status === "red").length;
+  const propAttention = bills.filter((b) => b.status !== "green").length;
+  const sc = statusClasses(health.overall);
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative group h-full ${isDragging ? "opacity-60 z-50" : ""}`}
+    >
+      {/* Drag handle — top-left corner, revealed on hover */}
+      <div
+        {...listeners}
+        {...attributes}
+        className="absolute top-2.5 left-3 p-1.5 cursor-grab active:cursor-grabbing touch-none z-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-white/[0.07]"
+        style={{ WebkitTapHighlightColor: "transparent" }}
+        onClick={(e) => e.preventDefault()}
+      >
+        <GripVertical className="w-3.5 h-3.5 text-white/40" />
+      </div>
+
+      <Link
+        href={`/dashboard/${p.id}`}
+        className={`block h-full bg-[#353530] rounded-2xl border border-[#4B5436]/15 hover:border-[#C7BBA3]/30 transition-all border-l-4 ${
+          health.overall === "green"
+            ? "border-l-emerald-400"
+            : health.overall === "yellow"
+              ? "border-l-amber-400"
+              : "border-l-red-400"
+        } ${isDragging ? "pointer-events-none" : ""}`}
+      >
+        <div className="p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className={`w-12 h-12 rounded-2xl ${sc.bg} flex items-center justify-center shrink-0`}>
+                <HomeIcon className={`w-5 h-5 ${sc.text}`} />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-lg font-serif font-bold truncate">
+                  {p.name ?? "Untitled property"}
+                </h2>
+                <p className="text-white/40 text-xs mt-0.5">
+                  {p.location ?? p.address ?? "—"} · {p.type ?? "Property"}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-white/30 group-hover:text-[#C7BBA3] transition-colors shrink-0" />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#4B5436]/15">
+            <div>
+              <p className="text-white/40 text-[11px] mb-1 flex items-center gap-1">
+                <Receipt className="w-3 h-3" />
+                Bills
+              </p>
+              <p className="text-sm font-semibold">
+                {bills.length > 0 ? bills.length : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-white/40 text-[11px] mb-1 flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                Autopay
+              </p>
+              <p className="text-sm font-semibold text-emerald-400">
+                {propAutopay}
+                <span className="text-white/30 font-normal">/{bills.length}</span>
+              </p>
+            </div>
+            <div>
+              <p className="text-white/40 text-[11px] mb-1">Net this mo.</p>
+              <p className="text-sm font-semibold text-white">
+                {noi !== 0 ? fmtCurrency(noi) : "—"}
+              </p>
+            </div>
+          </div>
+
+          {bills.length === 0 && (
+            <div className="mt-4 flex items-center gap-2 rounded-xl px-3 py-2 border border-[#4B5436]/10 bg-white/[0.02]">
+              <p className="text-xs text-white/30">No bills added yet</p>
+            </div>
+          )}
+
+          {bills.length > 0 && (overdueBills > 0 || propAttention > 0) && (
+            <div
+              className={`mt-4 flex items-center gap-2 rounded-xl px-3 py-2 border ${
+                overdueBills > 0
+                  ? "bg-red-500/5 border-red-500/15"
+                  : "bg-amber-500/5 border-amber-500/15"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  overdueBills > 0 ? "bg-red-400 animate-pulse" : "bg-amber-400"
+                }`}
+              />
+              <p className={`text-xs ${overdueBills > 0 ? "text-red-400" : "text-amber-400"}`}>
+                {overdueBills > 0
+                  ? `${overdueBills} overdue · ${propAttention - overdueBills} due soon`
+                  : `${propAttention} due soon`}
+              </p>
+            </div>
+          )}
+        </div>
+      </Link>
+    </div>
+  );
+}
+
 // ── Portfolio page ───────────────────────────────────────────────────────────
 
 export default function PortfolioPage() {
@@ -82,6 +228,12 @@ export default function PortfolioPage() {
   const [lookupError, setLookupError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+
+  // dnd-kit sensors: require 8px movement before starting drag (prevents accidental drags on tap)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  );
 
   useEffect(() => {
     listUserProperties(supabase)
@@ -123,6 +275,25 @@ export default function PortfolioPage() {
   const totalSoon = useReal
     ? allBills.filter((b) => b.status === "yellow").length
     : actionItems.filter((a) => a.priority === "soon").length;
+
+  // ── Drag-and-drop handler ────────────────────────────────────────────────
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setDbProperties((prev) => {
+      const oldIndex = prev.findIndex((p) => p.id === active.id);
+      const newIndex = prev.findIndex((p) => p.id === over.id);
+      const reordered = arrayMove(prev, oldIndex, newIndex);
+
+      // Persist new sort_order values to Supabase (fire-and-forget)
+      const updates = reordered.map((p, i) => ({ id: p.id, sort_order: i }));
+      updatePropertySortOrders(supabase, updates).catch(() => {});
+
+      return reordered;
+    });
+  }
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -186,8 +357,9 @@ export default function PortfolioPage() {
         occupancy: null,
         rent: form.income ? Number(form.income) : null,
         rent_bills: null,
+        sort_order: dbProperties.length, // append at end
       });
-      setDbProperties((prev) => [{ ...created, bills: [] }, ...prev]);
+      setDbProperties((prev) => [...prev, { ...created, bills: [] }]);
       setForm(emptyForm);
       setShowAddModal(false);
     } catch (e: unknown) {
@@ -323,7 +495,12 @@ export default function PortfolioPage() {
 
         {/* Properties header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-white/70">Properties</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-medium text-white/70">Properties</h2>
+            {useReal && dbProperties.length > 1 && (
+              <span className="text-[10px] text-white/25 italic">drag to reorder</span>
+            )}
+          </div>
           <button
             onClick={() => { setShowAddModal(true); setSaveError(""); }}
             className="flex items-center gap-1.5 text-xs text-[#C7BBA3] bg-[#C7BBA3]/10 hover:bg-[#C7BBA3]/20 border border-[#C7BBA3]/20 rounded-xl px-3 py-1.5 transition-colors"
@@ -333,107 +510,24 @@ export default function PortfolioPage() {
           </button>
         </div>
 
-        {/* Real property cards */}
+        {/* Real property cards — sortable */}
         {useReal && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {dbProperties.map((p) => {
-              const bills = p.bills ?? [];
-              const health = computePropertyHealth(bills);
-              const noi = computeNOI(p, bills);
-              const propAutopay = bills.filter((b) => b.autopay).length;
-              const overdueBills = bills.filter((b) => b.status === "red").length;
-              const propAttention = bills.filter((b) => b.status !== "green").length;
-              const sc = statusClasses(health.overall);
-
-              return (
-                <Link
-                  key={p.id}
-                  href={`/v0/${p.id}`}
-                  className={`group block bg-[#353530] rounded-2xl border border-[#4B5436]/15 hover:border-[#C7BBA3]/30 transition-all border-l-4 ${
-                    health.overall === "green"
-                      ? "border-l-emerald-400"
-                      : health.overall === "yellow"
-                        ? "border-l-amber-400"
-                        : "border-l-red-400"
-                  }`}
-                >
-                  <div className="p-5 sm:p-6">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <div className={`w-12 h-12 rounded-2xl ${sc.bg} flex items-center justify-center shrink-0`}>
-                          <HomeIcon className={`w-5 h-5 ${sc.text}`} />
-                        </div>
-                        <div className="min-w-0">
-                          <h2 className="text-lg font-serif font-bold truncate">
-                            {p.name ?? "Untitled property"}
-                          </h2>
-                          <p className="text-white/40 text-xs mt-0.5">
-                            {p.location ?? p.address ?? "—"} · {p.type ?? "Property"}
-                          </p>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-white/30 group-hover:text-[#C7BBA3] transition-colors shrink-0" />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#4B5436]/15">
-                      <div>
-                        <p className="text-white/40 text-[11px] mb-1 flex items-center gap-1">
-                          <Receipt className="w-3 h-3" />
-                          Bills
-                        </p>
-                        <p className="text-sm font-semibold">
-                          {bills.length > 0 ? bills.length : "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-white/40 text-[11px] mb-1 flex items-center gap-1">
-                          <Zap className="w-3 h-3" />
-                          Autopay
-                        </p>
-                        <p className="text-sm font-semibold text-emerald-400">
-                          {propAutopay}
-                          <span className="text-white/30 font-normal">/{bills.length}</span>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-white/40 text-[11px] mb-1">Net this mo.</p>
-                        <p className="text-sm font-semibold text-white">
-                          {noi !== 0 ? fmtCurrency(noi) : "—"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {bills.length === 0 && (
-                      <div className="mt-4 flex items-center gap-2 rounded-xl px-3 py-2 border border-[#4B5436]/10 bg-white/[0.02]">
-                        <p className="text-xs text-white/30">No bills added yet</p>
-                      </div>
-                    )}
-
-                    {bills.length > 0 && (overdueBills > 0 || propAttention > 0) && (
-                      <div
-                        className={`mt-4 flex items-center gap-2 rounded-xl px-3 py-2 border ${
-                          overdueBills > 0
-                            ? "bg-red-500/5 border-red-500/15"
-                            : "bg-amber-500/5 border-amber-500/15"
-                        }`}
-                      >
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            overdueBills > 0 ? "bg-red-400 animate-pulse" : "bg-amber-400"
-                          }`}
-                        />
-                        <p className={`text-xs ${overdueBills > 0 ? "text-red-400" : "text-amber-400"}`}>
-                          {overdueBills > 0
-                            ? `${overdueBills} overdue · ${propAttention - overdueBills} due soon`
-                            : `${propAttention} due soon`}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={dbProperties.map((p) => p.id)}
+              strategy={rectSortingStrategy}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {dbProperties.map((p) => (
+                  <SortablePropertyCard key={p.id} p={p} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
 
         {/* Mock property cards (shown when no real properties) */}
@@ -452,8 +546,8 @@ export default function PortfolioPage() {
                 return (
                   <Link
                     key={p.id}
-                    href={`/v0/${p.id}`}
-                    className={`group block bg-[#353530] rounded-2xl border border-[#4B5436]/15 hover:border-[#C7BBA3]/30 transition-all border-l-4 ${
+                    href={`/dashboard/${p.id}`}
+                    className={`group block h-full bg-[#353530] rounded-2xl border border-[#4B5436]/15 hover:border-[#C7BBA3]/30 transition-all border-l-4 ${
                       health.overall === "green"
                         ? "border-l-emerald-400"
                         : health.overall === "yellow"
