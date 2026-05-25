@@ -9,6 +9,7 @@ import {
   Home as HomeIcon,
   Wrench,
   ChevronRight,
+  ChevronDown,
   Activity,
   DollarSign,
   Receipt,
@@ -51,6 +52,7 @@ import {
   actionItemsByProperty,
   utilityDataByProperty,
   financialSummaryByProperty,
+  expenseBreakdownByProperty,
   bookingsByProperty,
   getPropertyHealth,
   statusClasses,
@@ -65,6 +67,20 @@ const BILL_CATEGORIES = [
   "Cleaning", "Maintenance", "Platform fees", "Supplies", "Management",
 ] as const;
 
+const categoryColors: Record<string, string> = {
+  Mortgage: "bg-[#C7BBA3]",
+  Utilities: "bg-amber-400",
+  Insurance: "bg-blue-400",
+  HOA: "bg-violet-400",
+  Tax: "bg-rose-400",
+  Cleaning: "bg-cyan-400",
+  Maintenance: "bg-orange-400",
+  "Platform fees": "bg-pink-400",
+  Supplies: "bg-teal-400",
+  Management: "bg-indigo-400",
+  Other: "bg-white/40",
+};
+
 function RealPropertyDetail({ property: initialProperty }: { property: DbPropertyWithBills }) {
   const supabase = createClient();
 
@@ -75,6 +91,7 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
   const [showPropModal, setShowPropModal] = useState(false);
   const [showMortgageModal, setShowMortgageModal] = useState(false);
   const [showAddBillModal, setShowAddBillModal] = useState(false);
+  const [showFullFinancials, setShowFullFinancials] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [propForm, setPropForm] = useState({
@@ -502,7 +519,7 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
         </CardContent>
       </Card>
 
-      {/* ── 6. Financial summary ──────────────────────────────────────────── */}
+      {/* ── 6. Financial summary (expandable, full-width) ────────────────── */}
       <Card className="bg-[#353530] border-[#4B5436]/15 text-white">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-white/70 flex items-center gap-2">
@@ -510,32 +527,247 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
             Financial summary
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-white/50">Income</span>
-            <span className="text-sm font-semibold text-emerald-400">
-              {income > 0 ? fmtCurrency(income) : "—"}
-            </span>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4 mb-3">
+            <div>
+              <p className="text-[11px] text-white/40 mb-1">Income</p>
+              <p className="text-lg font-bold text-emerald-400">{income > 0 ? fmtCurrency(income) : "—"}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-white/40 mb-1">Expenses</p>
+              <p className="text-lg font-bold text-red-400">{totalDue > 0 ? fmtCurrency(totalDue) : "—"}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-white/40 mb-1">NOI</p>
+              <p className={`text-lg font-bold ${noi > 0 ? "text-emerald-400" : noi < 0 ? "text-red-400" : "text-[#C7BBA3]"}`}>
+                {income > 0 || totalDue > 0 ? fmtCurrency(noi) : "—"}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-white/50">Expenses</span>
-            <span className="text-sm font-semibold text-red-400">
-              {totalDue > 0 ? fmtCurrency(totalDue) : "—"}
-            </span>
+
+          <div className="relative group pt-3 border-t border-[#4B5436]/15">
+            <button
+              onClick={() => setShowFullFinancials((v) => !v)}
+              className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-[#4B5436]/10 hover:bg-[#4B5436]/20 border border-[#4B5436]/20 hover:border-[#4B5436]/40 text-sm font-medium text-[#C7BBA3] hover:text-white transition-all"
+            >
+              <div className="flex items-center gap-2.5">
+                <DollarSign className="w-4 h-4" />
+                <span>Full P&amp;L · Mortgage · Equity</span>
+              </div>
+              <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${showFullFinancials ? "rotate-180" : ""}`} />
+            </button>
+            {!showFullFinancials && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 rounded-xl bg-[#2B2B2B] border border-[#4B5436]/30 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 p-4">
+                <div className="grid grid-cols-3 gap-5">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Top expenses</p>
+                    {categoryTotals.length > 0 && (
+                      <div className="h-2 rounded-full overflow-hidden flex bg-[#4B5436]/20 mb-2">
+                        {categoryTotals.slice(0, 4).map(([cat, amount]) => (
+                          <div
+                            key={cat}
+                            className={`h-full first:rounded-l-full last:rounded-r-full ${categoryColors[cat] ?? "bg-white/40"}`}
+                            style={{ width: `${totalDue > 0 ? (amount / totalDue) * 100 : 0}%` }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <div className="space-y-0.5">
+                      {categoryTotals.slice(0, 3).map(([cat, amount]) => (
+                        <div key={cat} className="flex items-center gap-1.5 text-[11px]">
+                          <span className={`w-1.5 h-1.5 rounded-full ${categoryColors[cat] ?? "bg-white/40"} shrink-0`} />
+                          <span className="text-white/50 truncate">{cat}</span>
+                          <span className="text-white/30 ml-auto shrink-0">{fmtCurrency(amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Mortgage</p>
+                    {mortPay > 0 && mortOrig > 0 ? (
+                      <>
+                        <div className="h-2 rounded-full overflow-hidden bg-[#4B5436]/20 mb-2">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#C7BBA3]"
+                            style={{ width: `${Math.round((1 - mortBal / mortOrig) * 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-white/50">
+                          <span className="text-emerald-400 font-medium">{Math.round((1 - mortBal / mortOrig) * 100)}%</span> paid off
+                        </p>
+                        <p className="text-[11px] text-white/30">{fmtCurrency(mortBal)} remaining</p>
+                      </>
+                    ) : (
+                      <p className="text-[11px] text-white/30 italic">Not set up yet</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Equity</p>
+                    {propVal > 0 ? (
+                      <div className="flex items-center gap-3">
+                        {(() => {
+                          const pR = 16; const pC = 2 * Math.PI * pR;
+                          return (
+                            <svg width="42" height="42" viewBox="0 0 42 42" className="shrink-0">
+                              <circle cx="21" cy="21" r={pR} fill="none" stroke="rgba(75,84,54,0.3)" strokeWidth="5" />
+                              {equityPct > 0 && (
+                                <circle cx="21" cy="21" r={pR} fill="none" stroke="#C7BBA3" strokeWidth="5"
+                                  strokeDasharray={`${(equityPct / 100) * pC} ${(1 - equityPct / 100) * pC}`}
+                                  strokeLinecap="round" transform="rotate(-90 21 21)" />
+                              )}
+                            </svg>
+                          );
+                        })()}
+                        <div>
+                          <p className="text-sm font-semibold text-[#C7BBA3]">{equityPct}%</p>
+                          <p className="text-[11px] text-white/30">{fmtCurrency(equity)}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-white/30 italic">Add property value</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flex items-center justify-between pt-3 border-t border-[#4B5436]/15">
-            <span className="text-xs text-white/70 font-medium">NOI</span>
-            <span className="text-lg font-bold text-[#C7BBA3]">
-              {income > 0 || totalDue > 0 ? fmtCurrency(noi) : "—"}
-            </span>
-          </div>
-          <Link
-            href={`/dashboard/${prop.id}/financials`}
-            className="flex items-center justify-between pt-2 border-t border-[#4B5436]/15 text-xs text-[#C7BBA3] hover:text-white transition-colors group"
-          >
-            <span>Full P&amp;L · mortgage · equity</span>
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+
+          {showFullFinancials && (
+            <div className="pt-4 mt-3 border-t border-[#4B5436]/15">
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* Left: P&L breakdown (3/5 width) */}
+                <div className="lg:col-span-3 space-y-2.5">
+                  <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider mb-3">Monthly P&amp;L</p>
+                  <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Income</p>
+                      <p className="text-[11px] text-white/40">Monthly revenue</p>
+                    </div>
+                    <p className="text-lg font-semibold text-emerald-400">+{income > 0 ? fmtCurrency(income) : "—"}</p>
+                  </div>
+                  {categoryTotals.map(([cat, amount]) => (
+                    <div key={cat} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-[#4B5436]/10">
+                      <span className={`w-2.5 h-2.5 rounded-full ${categoryColors[cat] ?? "bg-white/40"} shrink-0`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm">{cat}</p>
+                        <div className="mt-1.5 h-1.5 bg-[#4B5436]/20 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${categoryColors[cat] ?? "bg-white/40"} rounded-full`}
+                            style={{ width: `${Math.round((amount / maxCat) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-semibold text-red-400">{fmtCurrency(amount)}</p>
+                        <p className="text-[10px] text-white/30">{totalDue > 0 ? `${Math.round((amount / totalDue) * 100)}%` : ""}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between pt-3 border-t border-[#4B5436]/15">
+                    <p className="text-sm font-semibold">Net operating income</p>
+                    <p className={`text-xl font-bold ${noi >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      {income > 0 || totalDue > 0 ? fmtCurrency(noi) : "—"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Mortgage + Equity (2/5 width) */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">Mortgage</p>
+                      <button onClick={() => setShowMortgageModal(true)} className="p-1 rounded-lg hover:bg-white/[0.06] transition-colors">
+                        <Pencil className="w-3 h-3 text-white/30" />
+                      </button>
+                    </div>
+                    {mortPay > 0 ? (
+                      <div className="space-y-2.5 p-4 rounded-xl bg-white/[0.02] border border-[#4B5436]/10">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-white/50">Monthly payment</span>
+                          <span className="text-sm font-semibold">
+                            {fmtCurrency(mortPay)}
+                            {mortRate > 0 && <span className="text-white/40 text-xs ml-1.5">@ {mortRate}%</span>}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-white/50">Current balance</span>
+                          <span className="text-sm font-semibold">{fmtCurrency(mortBal)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-white/50">Original loan</span>
+                          <span className="text-sm font-semibold">{fmtCurrency(mortOrig)}</span>
+                        </div>
+                        {mortBal > 0 && mortOrig > 0 && (
+                          <>
+                            <div className="flex items-center justify-between pt-2.5 border-t border-[#4B5436]/15">
+                              <span className="text-xs text-white/70">Principal paid</span>
+                              <span className="text-sm font-bold text-emerald-400">
+                                {fmtCurrency(mortOrig - mortBal)} ({Math.round((1 - mortBal / mortOrig) * 100)}%)
+                              </span>
+                            </div>
+                            <div className="h-2.5 bg-[#4B5436]/20 rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#C7BBA3]"
+                                style={{ width: `${Math.round((1 - mortBal / mortOrig) * 100)}%` }}
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowMortgageModal(true)}
+                        className="w-full py-5 border border-dashed border-[#4B5436]/30 rounded-xl text-sm text-white/30 hover:text-white/50 hover:border-[#4B5436]/50 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add mortgage details
+                      </button>
+                    )}
+                  </div>
+
+                  {propVal > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">Equity</p>
+                      <div className="flex flex-col items-center p-4 rounded-xl bg-white/[0.02] border border-[#4B5436]/10">
+                        {(() => {
+                          const eR = 54;
+                          const eC = 2 * Math.PI * eR;
+                          const eOffset = eC - (equityPct / 100) * eC;
+                          return (
+                            <svg width="140" height="140" viewBox="0 0 140 140">
+                              <circle cx="70" cy="70" r={eR} fill="none" stroke="rgba(75,84,54,0.3)" strokeWidth="11" />
+                              {equityPct > 0 && (
+                                <circle
+                                  cx="70" cy="70" r={eR} fill="none"
+                                  stroke="#C7BBA3" strokeWidth="11"
+                                  strokeDasharray={eC}
+                                  strokeDashoffset={eOffset}
+                                  strokeLinecap="round"
+                                  transform="rotate(-90 70 70)"
+                                />
+                              )}
+                              <text x="70" y="66" textAnchor="middle" fill="#C7BBA3" fontSize="22" fontWeight="bold">{equityPct}%</text>
+                              <text x="70" y="84" textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="10">equity</text>
+                            </svg>
+                          );
+                        })()}
+                        <div className="grid grid-cols-2 gap-4 w-full mt-3 pt-3 border-t border-[#4B5436]/15">
+                          <div>
+                            <p className="text-white/40 text-[11px]">Equity</p>
+                            <p className="text-base font-semibold text-[#C7BBA3]">{fmtCurrency(equity)}</p>
+                          </div>
+                          <div>
+                            <p className="text-white/40 text-[11px]">Owed</p>
+                            <p className="text-base font-semibold">{mortBal > 0 ? fmtCurrency(mortBal) : "—"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -696,6 +928,7 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
 // ── Mock-data property detail (preserved for phoenix/pvr demo) ───────────────
 
 function MockPropertyDetail({ id }: { id: string }) {
+  const [showFullFinancials, setShowFullFinancials] = useState(false);
   const property = getProperty(id);
   if (!property) notFound();
 
@@ -703,6 +936,11 @@ function MockPropertyDetail({ id }: { id: string }) {
   const actions = actionItemsByProperty(id);
   const utilities = utilityDataByProperty[id] ?? [];
   const fin = financialSummaryByProperty[id];
+  const expenses = expenseBreakdownByProperty[id] ?? [];
+  const mockEquity = property.propVal - property.mortBal;
+  const mockEquityPct = Math.round((mockEquity / property.propVal) * 100);
+  const mockPaidPrincipal = property.mortOrig - property.mortBal;
+  const mockPaidPct = Math.round((mockPaidPrincipal / property.mortOrig) * 100);
   const bookings = bookingsByProperty[id] ?? [];
   const health = getPropertyHealth(id);
 
@@ -937,104 +1175,290 @@ function MockPropertyDetail({ id }: { id: string }) {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="bg-[#353530] border-[#4B5436]/15 text-white lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/70 flex items-center gap-2">
-              <Activity className="w-4 h-4" />
-              Monthly utility spend
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="elecGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="gasGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f97316" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="month" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "#353530",
-                      border: "1px solid rgba(75,84,54,0.3)",
-                      borderRadius: 12,
-                      color: "#C7BBA3",
-                      fontSize: 12,
-                    }}
-                    formatter={(value, name) => [`$${value}`, String(name)]}
-                  />
-                  <Area type="monotone" dataKey="Electric" stroke="#f59e0b" fill="url(#elecGrad)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="Water" stroke="#3b82f6" fill="url(#waterGrad)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="Gas" stroke="#f97316" fill="url(#gasGrad)" strokeWidth={2} dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex items-center gap-4 mt-2 px-1">
-              {[["#f59e0b", "Electric"], ["#3b82f6", "Water"], ["#f97316", "Gas"]].map(([color, label]) => (
-                <span key={label} className="flex items-center gap-1.5 text-[11px] text-white/40">
-                  <span className="w-2 h-2 rounded-full" style={{ background: color }} />
-                  {label}
-                </span>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#353530] border-[#4B5436]/15 text-white">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/70 flex items-center gap-2">
-              <DollarSign className="w-4 h-4" />
-              Financial summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white/50">Rental Income</span>
-              <span className="text-sm font-semibold text-emerald-400">{fmtCurrency(fin.income)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white/50">Expenses</span>
-              <span className="text-sm font-semibold text-red-400">{fmtCurrency(fin.expenses)}</span>
-            </div>
-            <div className="flex items-center justify-between pt-3 border-t border-[#4B5436]/15">
-              <span className="text-xs text-white/70 font-medium">NOI</span>
-              <span className="text-lg font-bold text-[#C7BBA3]">{fmtCurrency(fin.noi)}</span>
-            </div>
-            <div className="pt-2 border-t border-white/5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-white/40">Occupancy Rate</span>
-                <span className="text-xs font-medium text-white/70">{fin.occupancy}%</span>
-              </div>
-              <div className="w-full h-2 bg-[#4B5436]/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#4B5436] to-emerald-500 rounded-full transition-all duration-700"
-                  style={{ width: `${fin.occupancy}%` }}
+      {/* Utility chart — standalone full-width */}
+      <Card className="bg-[#353530] border-[#4B5436]/15 text-white">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-white/70 flex items-center gap-2">
+            <Activity className="w-4 h-4" />
+            Monthly utility spend
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="elecGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gasGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f97316" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="month" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
+                <Tooltip
+                  contentStyle={{
+                    background: "#353530",
+                    border: "1px solid rgba(75,84,54,0.3)",
+                    borderRadius: 12,
+                    color: "#C7BBA3",
+                    fontSize: 12,
+                  }}
+                  formatter={(value, name) => [`$${value}`, String(name)]}
                 />
+                <Area type="monotone" dataKey="Electric" stroke="#f59e0b" fill="url(#elecGrad)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="Water" stroke="#3b82f6" fill="url(#waterGrad)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="Gas" stroke="#f97316" fill="url(#gasGrad)" strokeWidth={2} dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center gap-4 mt-2 px-1">
+            {[["#f59e0b", "Electric"], ["#3b82f6", "Water"], ["#f97316", "Gas"]].map(([color, label]) => (
+              <span key={label} className="flex items-center gap-1.5 text-[11px] text-white/40">
+                <span className="w-2 h-2 rounded-full" style={{ background: color }} />
+                {label}
+              </span>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Financial summary — full-width, expandable */}
+      <Card className="bg-[#353530] border-[#4B5436]/15 text-white">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-white/70 flex items-center gap-2">
+            <DollarSign className="w-4 h-4" />
+            Financial summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+            <div>
+              <p className="text-[11px] text-white/40 mb-1">Income</p>
+              <p className="text-lg font-bold text-emerald-400">{fmtCurrency(fin.income)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-white/40 mb-1">Expenses</p>
+              <p className="text-lg font-bold text-red-400">{fmtCurrency(fin.expenses)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-white/40 mb-1">NOI</p>
+              <p className={`text-lg font-bold ${fin.noi > 0 ? "text-emerald-400" : fin.noi < 0 ? "text-red-400" : "text-[#C7BBA3]"}`}>
+                {fmtCurrency(fin.noi)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] text-white/40 mb-1">Occupancy</p>
+              <div className="flex items-center gap-2">
+                <p className="text-lg font-bold text-[#C7BBA3]">{fin.occupancy}%</p>
+                <div className="flex-1 h-2 bg-[#4B5436]/20 rounded-full overflow-hidden max-w-[80px]">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#4B5436] to-emerald-500 rounded-full"
+                    style={{ width: `${fin.occupancy}%` }}
+                  />
+                </div>
               </div>
             </div>
-            <Link
-              href={`/dashboard/${id}/financials`}
-              className="flex items-center justify-between mt-2 pt-2 border-t border-[#4B5436]/15 text-xs text-[#C7BBA3] hover:text-white transition-colors group"
+          </div>
+
+          <div className="relative group pt-3 border-t border-[#4B5436]/15">
+            <button
+              onClick={() => setShowFullFinancials((v) => !v)}
+              className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-[#4B5436]/10 hover:bg-[#4B5436]/20 border border-[#4B5436]/20 hover:border-[#4B5436]/40 text-sm font-medium text-[#C7BBA3] hover:text-white transition-all"
             >
-              <span>Full P&amp;L · mortgage · equity</span>
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+              <div className="flex items-center gap-2.5">
+                <DollarSign className="w-4 h-4" />
+                <span>Full P&amp;L · Mortgage · Equity</span>
+              </div>
+              <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${showFullFinancials ? "rotate-180" : ""}`} />
+            </button>
+            {!showFullFinancials && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 rounded-xl bg-[#2B2B2B] border border-[#4B5436]/30 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 p-4">
+                <div className="grid grid-cols-3 gap-5">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Top expenses</p>
+                    {expenses.length > 0 && (
+                      <div className="h-2 rounded-full overflow-hidden flex bg-[#4B5436]/20 mb-2">
+                        {expenses.slice(0, 4).map((e) => (
+                          <div
+                            key={e.category}
+                            className={`h-full first:rounded-l-full last:rounded-r-full ${categoryColors[e.category] ?? "bg-white/40"}`}
+                            style={{ width: `${Math.round(e.share * 100)}%` }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <div className="space-y-0.5">
+                      {expenses.slice(0, 3).map((e) => (
+                        <div key={e.category} className="flex items-center gap-1.5 text-[11px]">
+                          <span className={`w-1.5 h-1.5 rounded-full ${categoryColors[e.category] ?? "bg-white/40"} shrink-0`} />
+                          <span className="text-white/50 truncate">{e.category}</span>
+                          <span className="text-white/30 ml-auto shrink-0">{fmtCurrency(e.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Mortgage</p>
+                    <div className="h-2 rounded-full overflow-hidden bg-[#4B5436]/20 mb-2">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#C7BBA3]"
+                        style={{ width: `${mockPaidPct}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-white/50">
+                      <span className="text-emerald-400 font-medium">{mockPaidPct}%</span> paid off
+                    </p>
+                    <p className="text-[11px] text-white/30">{fmtCurrency(property.mortBal)} remaining</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Equity</p>
+                    <div className="flex items-center gap-3">
+                      {(() => {
+                        const pR = 16; const pC = 2 * Math.PI * pR;
+                        return (
+                          <svg width="42" height="42" viewBox="0 0 42 42" className="shrink-0">
+                            <circle cx="21" cy="21" r={pR} fill="none" stroke="rgba(75,84,54,0.3)" strokeWidth="5" />
+                            <circle cx="21" cy="21" r={pR} fill="none" stroke="#C7BBA3" strokeWidth="5"
+                              strokeDasharray={`${(mockEquityPct / 100) * pC} ${(1 - mockEquityPct / 100) * pC}`}
+                              strokeLinecap="round" transform="rotate(-90 21 21)" />
+                          </svg>
+                        );
+                      })()}
+                      <div>
+                        <p className="text-sm font-semibold text-[#C7BBA3]">{mockEquityPct}%</p>
+                        <p className="text-[11px] text-white/30">{fmtCurrency(mockEquity)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {showFullFinancials && (
+            <div className="pt-4 mt-3 border-t border-[#4B5436]/15">
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* Left: P&L breakdown (3/5 width) */}
+                <div className="lg:col-span-3 space-y-2.5">
+                  <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider mb-3">Monthly P&amp;L</p>
+                  <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Booking income</p>
+                      <p className="text-[11px] text-white/40">{bookings.filter((b) => b.status === "completed").length} stays this period</p>
+                    </div>
+                    <p className="text-lg font-semibold text-emerald-400">+{fmtCurrency(fin.income)}</p>
+                  </div>
+                  {expenses.map((e) => (
+                    <div key={e.category} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-[#4B5436]/10">
+                      <span className={`w-2.5 h-2.5 rounded-full ${categoryColors[e.category] ?? "bg-white/40"} shrink-0`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm">{e.category}</p>
+                        <div className="mt-1.5 h-1.5 bg-[#4B5436]/20 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${categoryColors[e.category] ?? "bg-white/40"} rounded-full`}
+                            style={{ width: `${Math.round(e.share * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-semibold text-red-400">{fmtCurrency(e.amount)}</p>
+                        <p className="text-[10px] text-white/30">{Math.round(e.share * 100)}%</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between pt-3 border-t border-[#4B5436]/15">
+                    <p className="text-sm font-semibold">Net operating income</p>
+                    <p className={`text-xl font-bold ${fin.noi >= 0 ? "text-emerald-400" : "text-red-400"}`}>{fmtCurrency(fin.noi)}</p>
+                  </div>
+                </div>
+
+                {/* Right: Mortgage + Equity (2/5 width) */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">Mortgage</p>
+                      <Badge className="bg-white/[0.04] text-white/50 border-0 text-[10px] px-1.5">
+                        {property.mortRate}% APR
+                      </Badge>
+                    </div>
+                    <div className="space-y-2.5 p-4 rounded-xl bg-white/[0.02] border border-[#4B5436]/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-white/50">Monthly payment</span>
+                        <span className="text-sm font-semibold">{fmtCurrency(property.mortPay)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-white/50">Current balance</span>
+                        <span className="text-sm font-semibold">{fmtCurrency(property.mortBal)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-white/50">Original loan</span>
+                        <span className="text-sm font-semibold">{fmtCurrency(property.mortOrig)}</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-2.5 border-t border-[#4B5436]/15">
+                        <span className="text-xs text-white/70">Principal paid</span>
+                        <span className="text-sm font-bold text-emerald-400">
+                          {fmtCurrency(mockPaidPrincipal)} ({mockPaidPct}%)
+                        </span>
+                      </div>
+                      <div className="h-2.5 bg-[#4B5436]/20 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#C7BBA3]"
+                          style={{ width: `${mockPaidPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">Equity</p>
+                    <div className="flex flex-col items-center p-4 rounded-xl bg-white/[0.02] border border-[#4B5436]/10">
+                      {(() => {
+                        const eR = 54;
+                        const eC = 2 * Math.PI * eR;
+                        const eOffset = eC - (mockEquityPct / 100) * eC;
+                        return (
+                          <svg width="140" height="140" viewBox="0 0 140 140">
+                            <circle cx="70" cy="70" r={eR} fill="none" stroke="rgba(75,84,54,0.3)" strokeWidth="11" />
+                            <circle
+                              cx="70" cy="70" r={eR} fill="none"
+                              stroke="#C7BBA3" strokeWidth="11"
+                              strokeDasharray={eC}
+                              strokeDashoffset={eOffset}
+                              strokeLinecap="round"
+                              transform="rotate(-90 70 70)"
+                            />
+                            <text x="70" y="66" textAnchor="middle" fill="#C7BBA3" fontSize="22" fontWeight="bold">{mockEquityPct}%</text>
+                            <text x="70" y="84" textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="10">equity</text>
+                          </svg>
+                        );
+                      })()}
+                      <div className="grid grid-cols-2 gap-4 w-full mt-3 pt-3 border-t border-[#4B5436]/15">
+                        <div>
+                          <p className="text-white/40 text-[11px]">Equity</p>
+                          <p className="text-base font-semibold text-[#C7BBA3]">{fmtCurrency(mockEquity)}</p>
+                        </div>
+                        <div>
+                          <p className="text-white/40 text-[11px]">Owed</p>
+                          <p className="text-base font-semibold">{fmtCurrency(property.mortBal)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {property.type === "STR" && upcomingBookings.length > 0 && (
         <Card className="bg-[#353530] border-[#4B5436]/15 text-white">
