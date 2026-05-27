@@ -42,6 +42,7 @@ import {
   type DbPropertyWithBills,
   type DbBill,
   getPropertyById,
+  listUserProperties,
   computePropertyHealth,
   computeNOI,
   isDbId,
@@ -313,9 +314,93 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
         <div className="bg-[#353530] border border-[#4B5436]/15 rounded-2xl p-4">
           <p className="text-[11px] uppercase tracking-wider text-white/40 mb-3">Bills Due</p>
           <p className="text-2xl font-bold text-[#C7BBA3]">{totalDue > 0 ? fmtCurrency(totalDue) : "—"}</p>
-          <p className="text-xs text-white/30 mt-1">{bills.length} bills · {onAutopay} autopay</p>
+          <p className="text-xs mt-1">
+            {health.urgentCount > 0 ? (
+              <span className="text-red-400 font-medium">{health.urgentCount} overdue</span>
+            ) : health.soonCount > 0 ? (
+              <span className="text-amber-400 font-medium">{health.soonCount} due soon</span>
+            ) : (
+              <span className="text-white/30">{bills.length} bills · {onAutopay} autopay</span>
+            )}
+          </p>
         </div>
       </div>
+
+      {/* ── 2b. Action items (auto-generated from bill status) ────────────── */}
+      {(() => {
+        const actionItems = [
+          ...bills
+            .filter((b) => b.status === "red")
+            .map((b) => ({
+              id: `urgent-${b.id}`,
+              priority: "urgent" as const,
+              label: `Overdue: ${b.name}`,
+              detail: `${fmtCurrency(b.amount ?? 0)} — due ${b.due_date ?? "now"}`,
+              ctaLabel: "Pay now",
+            })),
+          ...bills
+            .filter((b) => b.status === "yellow" && !b.autopay)
+            .map((b) => ({
+              id: `soon-${b.id}`,
+              priority: "soon" as const,
+              label: `Due soon: ${b.name}`,
+              detail: `${fmtCurrency(b.amount ?? 0)} — due ${b.due_date ?? "soon"}`,
+              ctaLabel: "Review",
+            })),
+        ];
+
+        if (actionItems.length === 0) {
+          return (
+            <div className="flex items-center gap-3 bg-[#353530] border border-[#4B5436]/15 rounded-2xl px-5 py-4">
+              <div className="w-8 h-8 rounded-xl bg-emerald-400/10 flex items-center justify-center shrink-0">
+                <Activity className="w-4 h-4 text-emerald-400" />
+              </div>
+              <p className="text-sm text-white/50">All clear — no action needed right now</p>
+            </div>
+          );
+        }
+
+        const priorityStyles = {
+          urgent: { badge: "bg-red-400/15 text-red-400", border: "border-red-400/20" },
+          soon: { badge: "bg-amber-400/15 text-amber-400", border: "border-amber-400/20" },
+        };
+
+        return (
+          <Card className="bg-[#353530] border-[#4B5436]/15 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-white/70 flex items-center gap-2">
+                <Wrench className="w-4 h-4" />
+                Needs your attention
+                <Badge className="bg-[#C7BBA3]/15 text-[#C7BBA3] border-0 text-xs px-2 ml-auto">
+                  {actionItems.length}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {actionItems.map((action) => {
+                const ps = priorityStyles[action.priority];
+                return (
+                  <div
+                    key={action.id}
+                    className={`flex items-center gap-3 p-3 rounded-xl border ${ps.border} hover:bg-[#4B5436]/10 transition-colors`}
+                  >
+                    <Badge className={`${ps.badge} border-0 text-[10px] px-2 py-0.5 uppercase tracking-wide shrink-0`}>
+                      {action.priority}
+                    </Badge>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium leading-tight">{action.label}</p>
+                      <p className="text-xs text-white/40 mt-0.5">{action.detail}</p>
+                    </div>
+                    <button className="text-[11px] font-medium text-[#C7BBA3] bg-[#C7BBA3]/10 hover:bg-[#C7BBA3]/20 border border-[#C7BBA3]/20 rounded-lg px-2.5 py-1.5 transition-colors shrink-0">
+                      {action.ctaLabel}
+                    </button>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* ── 3. Equity + Mortgage row ──────────────────────────────────────── */}
       {(propVal > 0 || mortPay > 0) && (
@@ -400,6 +485,28 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                       </div>
                     </div>
                   )}
+                  {mortRate > 0 && mortBal > 0 && (() => {
+                    const monthlyInterest = mortBal * (mortRate / 100 / 12);
+                    const principal = mortPay - monthlyInterest;
+                    const payoffMonths = principal > 0 ? Math.ceil(mortBal / principal) : null;
+                    const payoffDate = payoffMonths ? new Date(Date.now() + payoffMonths * 30.44 * 24 * 60 * 60 * 1000) : null;
+                    return (
+                      <div className="flex gap-4 pt-1">
+                        <div>
+                          <p className="text-[10px] text-white/30">Interest/mo</p>
+                          <p className="text-xs font-medium text-white/60">{fmtCurrency(monthlyInterest)}</p>
+                        </div>
+                        {payoffDate && (
+                          <div>
+                            <p className="text-[10px] text-white/30">Payoff</p>
+                            <p className="text-xs font-medium text-white/60">
+                              {payoffDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 <button
@@ -528,20 +635,25 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 mb-3">
-            <div>
-              <p className="text-[11px] text-white/40 mb-1">Income</p>
-              <p className="text-lg font-bold text-emerald-400">{income > 0 ? fmtCurrency(income) : "—"}</p>
+          <div className="space-y-2 mb-3">
+            <div className="flex items-center justify-between py-1.5">
+              <span className="text-sm text-white/60">Income</span>
+              <span className="text-sm font-semibold text-emerald-400">{income > 0 ? `+${fmtCurrency(income)}` : "—"}</span>
             </div>
-            <div>
-              <p className="text-[11px] text-white/40 mb-1">Expenses</p>
-              <p className="text-lg font-bold text-red-400">{totalDue > 0 ? fmtCurrency(totalDue) : "—"}</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-white/40 mb-1">NOI</p>
-              <p className={`text-lg font-bold ${noi > 0 ? "text-emerald-400" : noi < 0 ? "text-red-400" : "text-[#C7BBA3]"}`}>
-                {income > 0 || totalDue > 0 ? fmtCurrency(noi) : "—"}
-              </p>
+            {categoryTotals.slice(0, 3).map(([cat, amount]) => (
+              <div key={cat} className="flex items-center justify-between py-1.5">
+                <span className="flex items-center gap-2 text-sm text-white/60">
+                  <span className={`w-1.5 h-1.5 rounded-full ${categoryColors[cat] ?? "bg-white/40"} shrink-0`} />
+                  {cat}
+                </span>
+                <span className="text-sm font-semibold text-red-400">-{fmtCurrency(amount)}</span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-2 border-t border-[#4B5436]/20">
+              <span className="text-sm font-medium text-white/70">Net cash flow</span>
+              <span className={`text-sm font-bold ${noi > 0 ? "text-emerald-400" : noi < 0 ? "text-red-400" : "text-[#C7BBA3]"}`}>
+                {income > 0 || totalDue > 0 ? `${noi >= 0 ? "+" : ""}${fmtCurrency(noi)}` : "—"}
+              </span>
             </div>
           </div>
 
@@ -1460,43 +1572,6 @@ function MockPropertyDetail({ id }: { id: string }) {
         </CardContent>
       </Card>
 
-      {property.type === "STR" && upcomingBookings.length > 0 && (
-        <Card className="bg-[#353530] border-[#4B5436]/15 text-white">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-white/70 flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Upcoming stays
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {upcomingBookings.map((b) => (
-              <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl border border-[#4B5436]/10 bg-white/[0.02]">
-                <Badge className="bg-white/[0.04] text-white/60 border-0 text-[10px] px-1.5 py-0 h-5 shrink-0">
-                  {b.platform}
-                </Badge>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{b.guest}</p>
-                  <p className="text-[11px] text-white/40">
-                    {b.checkIn} → {b.checkOut} · {b.nights} nights
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-emerald-400">+{fmtCurrency(b.net)}</p>
-                  <p className="text-[10px] text-white/30">net</p>
-                </div>
-              </div>
-            ))}
-            <Link
-              href={`/dashboard/${id}/bookings`}
-              className="flex items-center justify-between mt-2 pt-3 border-t border-[#4B5436]/15 text-xs text-[#C7BBA3] hover:text-white"
-            >
-              <span>All stays &amp; net per booking</span>
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          </CardContent>
-        </Card>
-      )}
-
       <p className="text-white/30 text-xs italic pt-4">All numbers are simulated for design review.</p>
     </main>
   );
@@ -1515,6 +1590,8 @@ export default function PropertyDetailPage({
   const [dbProperty, setDbProperty] = useState<DbPropertyWithBills | null | undefined>(
     undefined
   );
+  const [allProperties, setAllProperties] = useState<DbPropertyWithBills[]>([]);
+  const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
 
   useEffect(() => {
     if (!isDbId(id)) {
@@ -1522,6 +1599,7 @@ export default function PropertyDetailPage({
       return;
     }
     getPropertyById(supabase, id).then(setDbProperty);
+    listUserProperties(supabase).then(setAllProperties).catch(() => {});
   }, [id]);
 
   const loading = dbProperty === undefined && isDbId(id);
@@ -1539,13 +1617,42 @@ export default function PropertyDetailPage({
               <span className="hidden sm:inline">Portfolio</span>
             </Link>
             <div className="h-5 w-px bg-[#C7BBA3]/15" />
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-[#4B5436] flex items-center justify-center shrink-0">
-                <HomeIcon className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-serif text-base sm:text-lg font-bold tracking-tight truncate">
-                {propertyName}
-              </span>
+            <div className="relative">
+              <button
+                onClick={() => allProperties.length > 1 && setShowPropertyDropdown((v) => !v)}
+                className="flex items-center gap-2 min-w-0"
+              >
+                <div className="w-7 h-7 rounded-lg bg-[#4B5436] flex items-center justify-center shrink-0">
+                  <HomeIcon className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-serif text-base sm:text-lg font-bold tracking-tight truncate">
+                  {propertyName}
+                </span>
+                {allProperties.length > 1 && (
+                  <ChevronDown className={`w-4 h-4 text-white/40 shrink-0 transition-transform ${showPropertyDropdown ? "rotate-180" : ""}`} />
+                )}
+              </button>
+              {showPropertyDropdown && allProperties.length > 1 && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-[#353530] border border-[#4B5436]/30 rounded-xl shadow-xl z-50 overflow-hidden">
+                  {allProperties.map((p) => (
+                    <Link
+                      key={p.id}
+                      href={`/dashboard/${p.id}`}
+                      onClick={() => setShowPropertyDropdown(false)}
+                      className={`flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#4B5436]/20 transition-colors ${
+                        p.id === id ? "bg-[#4B5436]/10 text-[#C7BBA3]" : "text-white/70"
+                      }`}
+                    >
+                      <HomeIcon className="w-4 h-4 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{p.name ?? "Untitled"}</p>
+                        <p className="text-[11px] text-white/40 truncate">{p.location ?? p.address ?? ""}</p>
+                      </div>
+                      {p.id === id && <span className="ml-auto text-emerald-400 text-xs">Current</span>}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
