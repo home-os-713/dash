@@ -43,6 +43,11 @@ Both legacy pages are accessible by URL but intentionally buried. Do not delete 
 
 ## Getting started locally
 
+> **If you already have a local clone from the old repo (`jaimegarciae/homeowner-dashboard`), update your remote:**
+> ```bash
+> git remote set-url origin https://github.com/home-os-713/dash.git
+> ```
+
 ```bash
 # 1. Clone
 git clone https://github.com/home-os-713/dash.git
