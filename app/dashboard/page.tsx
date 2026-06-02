@@ -117,16 +117,16 @@ function SortablePropertyCard({ p }: { p: DbPropertyWithBills }) {
       <div
         {...listeners}
         {...attributes}
-        className="absolute top-2.5 left-3 p-1.5 cursor-grab active:cursor-grabbing touch-none z-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-white/[0.07]"
+        className="absolute top-2.5 left-3 p-1.5 cursor-grab active:cursor-grabbing touch-none z-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-black/[0.04]"
         style={{ WebkitTapHighlightColor: "transparent" }}
         onClick={(e) => e.preventDefault()}
       >
-        <GripVertical className="w-3.5 h-3.5 text-white/40" />
+        <GripVertical className="w-3.5 h-3.5 text-[#6E6B64]" />
       </div>
 
       <Link
         href={`/dashboard/${p.id}`}
-        className={`block h-full bg-[#353530] rounded-2xl border border-[#4B5436]/15 hover:border-[#C7BBA3]/30 transition-all border-l-4 ${
+        className={`block h-full bg-white rounded-2xl border border-[#EAE8E1] shadow-soft hover:border-[#5A6247]/25 transition-all border-l-4 ${
           health.overall === "green"
             ? "border-l-emerald-400"
             : health.overall === "yellow"
@@ -144,17 +144,17 @@ function SortablePropertyCard({ p }: { p: DbPropertyWithBills }) {
                 <h2 className="text-lg font-serif font-bold truncate">
                   {p.name ?? "Untitled property"}
                 </h2>
-                <p className="text-white/40 text-xs mt-0.5">
+                <p className="text-[#6E6B64] text-xs mt-0.5">
                   {p.location ?? p.address ?? "—"} · {p.type ?? "Property"}
                 </p>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-white/30 group-hover:text-[#C7BBA3] transition-colors shrink-0" />
+            <ChevronRight className="w-5 h-5 text-[#78756E] group-hover:text-[#5A6247] transition-colors shrink-0" />
           </div>
 
-          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#4B5436]/15">
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#EAE8E1]">
             <div>
-              <p className="text-white/40 text-[11px] mb-1 flex items-center gap-1">
+              <p className="text-[#6E6B64] text-[11px] mb-1 flex items-center gap-1">
                 <Receipt className="w-3 h-3" />
                 Bills
               </p>
@@ -163,26 +163,26 @@ function SortablePropertyCard({ p }: { p: DbPropertyWithBills }) {
               </p>
             </div>
             <div>
-              <p className="text-white/40 text-[11px] mb-1 flex items-center gap-1">
+              <p className="text-[#6E6B64] text-[11px] mb-1 flex items-center gap-1">
                 <Zap className="w-3 h-3" />
                 Autopay
               </p>
-              <p className="text-sm font-semibold text-emerald-400">
+              <p className="text-sm font-semibold text-emerald-600">
                 {propAutopay}
-                <span className="text-white/30 font-normal">/{bills.length}</span>
+                <span className="text-[#78756E] font-normal">/{bills.length}</span>
               </p>
             </div>
             <div>
-              <p className="text-white/40 text-[11px] mb-1">Net this mo.</p>
-              <p className="text-sm font-semibold text-white">
+              <p className="text-[#6E6B64] text-[11px] mb-1">Net this mo.</p>
+              <p className="text-sm font-semibold text-[#2B2B28]">
                 {noi !== 0 ? fmtCurrency(noi) : "—"}
               </p>
             </div>
           </div>
 
           {bills.length === 0 && (
-            <div className="mt-4 flex items-center gap-2 rounded-xl px-3 py-2 border border-[#4B5436]/10 bg-white/[0.02]">
-              <p className="text-xs text-white/30">No bills added yet</p>
+            <div className="mt-4 flex items-center gap-2 rounded-xl px-3 py-2 border border-[#EFEDE7] bg-black/[0.015]">
+              <p className="text-xs text-[#78756E]">No bills added yet</p>
             </div>
           )}
 
@@ -199,7 +199,7 @@ function SortablePropertyCard({ p }: { p: DbPropertyWithBills }) {
                   overdueBills > 0 ? "bg-red-400 animate-pulse" : "bg-amber-400"
                 }`}
               />
-              <p className={`text-xs ${overdueBills > 0 ? "text-red-400" : "text-amber-400"}`}>
+              <p className={`text-xs ${overdueBills > 0 ? "text-red-500" : "text-amber-600"}`}>
                 {overdueBills > 0
                   ? `${overdueBills} overdue · ${propAttention - overdueBills} due soon`
                   : `${propAttention} due soon`}
@@ -372,12 +372,12 @@ export default function PortfolioPage() {
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#2B2B2B] text-white">
+    <div className="min-h-screen bg-[#FAF9F6] text-[#2B2B28]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#4B5436]/95 backdrop-blur-xl border-b border-[#4B5436]/20">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#E2DFD6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#4B5436] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-[#5A6247] flex items-center justify-center">
               <HomeIcon className="w-4 h-4 text-white" />
             </div>
             <span className="font-serif text-lg font-bold tracking-tight">HomeOS</span>
@@ -386,18 +386,18 @@ export default function PortfolioPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard/inbox"
-              className="flex items-center gap-2 text-white/60 hover:text-white text-sm bg-white/[0.04] border border-[#4B5436]/15 rounded-xl px-3 py-2 transition-colors"
+              className="flex items-center gap-2 text-[#6E6B64] hover:text-[#2B2B28] text-sm bg-black/[0.025] border border-[#EAE8E1] rounded-xl px-3 py-2 transition-colors"
             >
               <Inbox className="w-4 h-4" />
               <span className="hidden sm:inline">Inbox</span>
               {totalUrgent + totalSoon > 0 && (
-                <Badge className="bg-[#C7BBA3]/15 text-[#C7BBA3] border-0 text-[10px] px-1.5 h-4">
+                <Badge className="bg-[#5A6247]/[0.08] text-[#5A6247] border-0 text-[10px] px-1.5 h-4">
                   {totalUrgent + totalSoon}
                 </Badge>
               )}
             </Link>
-            <button className="relative p-2 rounded-xl hover:bg-[#4B5436]/20 transition-colors">
-              <Bell className="w-5 h-5 text-white/60" />
+            <button className="relative p-2 rounded-xl hover:bg-[#5A6247]/[0.08] transition-colors">
+              <Bell className="w-5 h-5 text-[#6E6B64]" />
               {totalUrgent > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-400 rounded-full" />
               )}
@@ -405,7 +405,7 @@ export default function PortfolioPage() {
             <button
               onClick={handleSignOut}
               disabled={signingOut}
-              className="text-xs text-white/50 hover:text-white transition-colors px-3 py-1.5 rounded-lg border border-[#C7BBA3]/15"
+              className="text-xs text-[#6E6B64] hover:text-[#2B2B28] transition-colors px-3 py-1.5 rounded-lg border border-[#5A6247]/15"
             >
               Sign out
             </button>
@@ -413,57 +413,57 @@ export default function PortfolioPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 animate-rise stagger">
         {/* Demo data banner (only when showing mock) */}
         {!loadingData && !useReal && (
-          <div className="flex items-center gap-2 text-[10px] text-white/30 uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-[10px] text-[#78756E] uppercase tracking-wider">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
             Simulated demo data
           </div>
         )}
 
         {/* Hero */}
-        <div className="bg-[#353530] border border-[#4B5436]/15 rounded-2xl p-6 sm:p-8">
-          <p className="text-[11px] uppercase tracking-wider text-white/40 mb-3">
+        <div className="bg-white border border-[#EAE8E1] rounded-2xl shadow-soft p-6 sm:p-8">
+          <p className="text-[11px] uppercase tracking-wider text-[#6E6B64] mb-3">
             Every bill, every property, one place
           </p>
           {loadingData ? (
-            <div className="flex items-center gap-2 text-white/30">
+            <div className="flex items-center gap-2 text-[#78756E]">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">Loading your properties…</span>
             </div>
           ) : (
             <h1 className="text-2xl sm:text-3xl font-serif font-bold leading-tight">
-              <span className="text-white">{totalBills} bills</span>
-              <span className="text-white/40"> across </span>
-              <span className="text-white">
+              <span className="text-[#2B2B28]">{totalBills} bills</span>
+              <span className="text-[#6E6B64]"> across </span>
+              <span className="text-[#2B2B28]">
                 {useReal ? dbProperties.length : mockProperties.length} properties
               </span>
-              <span className="text-white/40"> · </span>
-              <span className="text-emerald-400">{onAutopay} on autopay</span>
+              <span className="text-[#6E6B64]"> · </span>
+              <span className="text-emerald-600">{onAutopay} on autopay</span>
               {needAttention > 0 && (
                 <>
-                  <span className="text-white/40"> · </span>
-                  <span className="text-amber-400">{needAttention} need attention</span>
+                  <span className="text-[#6E6B64]"> · </span>
+                  <span className="text-amber-600">{needAttention} need attention</span>
                 </>
               )}
             </h1>
           )}
-          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-[#4B5436]/15">
+          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-[#EAE8E1]">
             <div>
-              <p className="text-white/40 text-[11px] uppercase tracking-wider">Bills due this month</p>
-              <p className="text-2xl font-bold text-[#C7BBA3] mt-1">{fmtCurrency(totalDue)}</p>
+              <p className="text-[#6E6B64] text-[11px] uppercase tracking-wider">Bills due this month</p>
+              <p className="text-2xl font-bold tnum text-[#5A6247] mt-1">{fmtCurrency(totalDue)}</p>
             </div>
             <div>
-              <p className="text-white/40 text-[11px] uppercase tracking-wider">On autopay</p>
-              <p className="text-2xl font-bold text-emerald-400 mt-1">
+              <p className="text-[#6E6B64] text-[11px] uppercase tracking-wider">On autopay</p>
+              <p className="text-2xl font-bold tnum text-emerald-600 mt-1">
                 {onAutopay}
-                <span className="text-white/30 text-base font-normal">/{totalBills}</span>
+                <span className="text-[#78756E] text-base font-normal">/{totalBills}</span>
               </p>
             </div>
             <div>
-              <p className="text-white/40 text-[11px] uppercase tracking-wider">Needs you</p>
-              <p className="text-2xl font-bold text-white mt-1">{totalUrgent + totalSoon}</p>
+              <p className="text-[#6E6B64] text-[11px] uppercase tracking-wider">Needs you</p>
+              <p className="text-2xl font-bold tnum text-[#2B2B28] mt-1">{totalUrgent + totalSoon}</p>
             </div>
           </div>
         </div>
@@ -472,23 +472,23 @@ export default function PortfolioPage() {
         {!useReal && totalUrgent + totalSoon > 0 && (
           <Link
             href="/dashboard/inbox"
-            className="block bg-[#353530] border border-[#4B5436]/15 hover:border-[#C7BBA3]/30 rounded-2xl p-5 transition-colors group"
+            className="block bg-white border border-[#EAE8E1] hover:border-[#5A6247]/25 rounded-2xl p-5 transition-colors group"
           >
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-lg bg-[#C7BBA3]/15 shrink-0">
-                  <Inbox className="w-4 h-4 text-[#C7BBA3]" />
+                <div className="p-2 rounded-lg bg-[#5A6247]/[0.08] shrink-0">
+                  <Inbox className="w-4 h-4 text-[#5A6247]" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium">
-                    {totalUrgent > 0 && <span className="text-red-400">{totalUrgent} urgent</span>}
-                    {totalUrgent > 0 && totalSoon > 0 && <span className="text-white/30"> · </span>}
-                    {totalSoon > 0 && <span className="text-amber-400">{totalSoon} due soon</span>}
+                    {totalUrgent > 0 && <span className="text-red-500">{totalUrgent} urgent</span>}
+                    {totalUrgent > 0 && totalSoon > 0 && <span className="text-[#78756E]"> · </span>}
+                    {totalSoon > 0 && <span className="text-amber-600">{totalSoon} due soon</span>}
                   </p>
-                  <p className="text-[11px] text-white/40 mt-0.5">Open inbox to handle them</p>
+                  <p className="text-[11px] text-[#6E6B64] mt-0.5">Open inbox to handle them</p>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-white/30 group-hover:text-[#C7BBA3] transition-all" />
+              <ChevronRight className="w-5 h-5 text-[#78756E] group-hover:text-[#5A6247] transition-all" />
             </div>
           </Link>
         )}
@@ -496,14 +496,14 @@ export default function PortfolioPage() {
         {/* Properties header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-medium text-white/70">Properties</h2>
+            <h2 className="text-sm font-medium text-[#57554F]">Properties</h2>
             {useReal && dbProperties.length > 1 && (
-              <span className="text-[10px] text-white/25 italic">drag to reorder</span>
+              <span className="text-[10px] text-[#B5B2A9] italic">drag to reorder</span>
             )}
           </div>
           <button
             onClick={() => { setShowAddModal(true); setSaveError(""); }}
-            className="flex items-center gap-1.5 text-xs text-[#C7BBA3] bg-[#C7BBA3]/10 hover:bg-[#C7BBA3]/20 border border-[#C7BBA3]/20 rounded-xl px-3 py-1.5 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-[#5A6247] bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.10] border border-[#5A6247]/20 rounded-xl px-3 py-1.5 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add property
@@ -521,7 +521,7 @@ export default function PortfolioPage() {
               items={dbProperties.map((p) => p.id)}
               strategy={rectSortingStrategy}
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 stagger">
                 {dbProperties.map((p) => (
                   <SortablePropertyCard key={p.id} p={p} />
                 ))}
@@ -533,7 +533,7 @@ export default function PortfolioPage() {
         {/* Mock property cards (shown when no real properties) */}
         {!useReal && !loadingData && (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 stagger">
               {mockProperties.map((p) => {
                 const health = getPropertyHealth(p.id);
                 const fin = financialSummaryByProperty[p.id];
@@ -547,7 +547,7 @@ export default function PortfolioPage() {
                   <Link
                     key={p.id}
                     href={`/dashboard/${p.id}`}
-                    className={`group block h-full bg-[#353530] rounded-2xl border border-[#4B5436]/15 hover:border-[#C7BBA3]/30 transition-all border-l-4 ${
+                    className={`group block h-full bg-white rounded-2xl border border-[#EAE8E1] shadow-soft hover:border-[#5A6247]/25 transition-all border-l-4 ${
                       health.overall === "green"
                         ? "border-l-emerald-400"
                         : health.overall === "yellow"
@@ -563,33 +563,33 @@ export default function PortfolioPage() {
                           </div>
                           <div className="min-w-0">
                             <h2 className="text-lg font-serif font-bold truncate">{p.name}</h2>
-                            <p className="text-white/40 text-xs mt-0.5">
+                            <p className="text-[#6E6B64] text-xs mt-0.5">
                               {p.location} · {p.type}
                             </p>
                           </div>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-white/30 group-hover:text-[#C7BBA3] transition-colors shrink-0" />
+                        <ChevronRight className="w-5 h-5 text-[#78756E] group-hover:text-[#5A6247] transition-colors shrink-0" />
                       </div>
 
-                      <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#4B5436]/15">
+                      <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#EAE8E1]">
                         <div>
-                          <p className="text-white/40 text-[11px] mb-1 flex items-center gap-1">
+                          <p className="text-[#6E6B64] text-[11px] mb-1 flex items-center gap-1">
                             <Receipt className="w-3 h-3" />Bills
                           </p>
                           <p className="text-sm font-semibold">{bills.length}</p>
                         </div>
                         <div>
-                          <p className="text-white/40 text-[11px] mb-1 flex items-center gap-1">
+                          <p className="text-[#6E6B64] text-[11px] mb-1 flex items-center gap-1">
                             <Zap className="w-3 h-3" />Autopay
                           </p>
-                          <p className="text-sm font-semibold text-emerald-400">
+                          <p className="text-sm font-semibold text-emerald-600">
                             {propAutopay}
-                            <span className="text-white/30 font-normal">/{bills.length}</span>
+                            <span className="text-[#78756E] font-normal">/{bills.length}</span>
                           </p>
                         </div>
                         <div>
-                          <p className="text-white/40 text-[11px] mb-1">Net this mo.</p>
-                          <p className="text-sm font-semibold text-white">{fmtCurrency(fin.noi)}</p>
+                          <p className="text-[#6E6B64] text-[11px] mb-1">Net this mo.</p>
+                          <p className="text-sm font-semibold text-[#2B2B28]">{fmtCurrency(fin.noi)}</p>
                         </div>
                       </div>
 
@@ -606,7 +606,7 @@ export default function PortfolioPage() {
                               overdueBills > 0 ? "bg-red-400 animate-pulse" : "bg-amber-400"
                             }`}
                           />
-                          <p className={`text-xs ${overdueBills > 0 ? "text-red-400" : "text-amber-400"}`}>
+                          <p className={`text-xs ${overdueBills > 0 ? "text-red-500" : "text-amber-600"}`}>
                             {overdueBills > 0
                               ? `${overdueBills} overdue · ${propAttention - overdueBills} due soon`
                               : `${propAttention} due soon`}
@@ -619,13 +619,13 @@ export default function PortfolioPage() {
               })}
             </div>
 
-            <p className="text-white/30 text-xs italic pt-2">
+            <p className="text-[#78756E] text-xs italic pt-2">
               Add your first real property above to replace demo data.
             </p>
           </>
         )}
         <div className="pt-8 pb-2 flex justify-center">
-          <Link href="/legacy/dashboard" className="text-[10px] text-white/15 hover:text-white/30 transition-colors">
+          <Link href="/legacy/dashboard" className="text-[10px] text-[#CFCCC3] hover:text-[#78756E] transition-colors">
             Legacy dashboard
           </Link>
         </div>
@@ -633,35 +633,35 @@ export default function PortfolioPage() {
 
       {/* ── Add Property Modal ─────────────────────────────────────────────── */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-[#353530] rounded-2xl border border-[#4B5436]/30 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-[#4B5436]/20">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-overlay">
+          <div className="w-full max-w-lg bg-white rounded-2xl border border-[#D8D5CB] animate-modal shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-[#E2DFD6]">
               <h3 className="font-serif text-lg font-bold">Add property</h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
+                className="p-1.5 rounded-lg hover:bg-black/[0.04] transition-colors"
               >
-                <X className="w-4 h-4 text-white/50" />
+                <X className="w-4 h-4 text-[#6E6B64]" />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
               {/* Name */}
               <div>
-                <label className="block text-[11px] uppercase tracking-wider text-white/40 mb-1.5">
+                <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
                   Property name *
                 </label>
                 <input
                   value={form.name}
                   onChange={(e) => setField("name", e.target.value)}
                   placeholder="Desert Ridge Villa"
-                  className="w-full bg-[#2B2B2B] border border-[#4B5436]/30 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#C7BBA3]/40"
+                  className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
                 />
               </div>
 
               {/* Address + Lookup */}
               <div>
-                <label className="block text-[11px] uppercase tracking-wider text-white/40 mb-1.5">
+                <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
                   Address *
                 </label>
                 <div className="flex gap-2">
@@ -669,12 +669,12 @@ export default function PortfolioPage() {
                     value={form.address}
                     onChange={(e) => setField("address", e.target.value)}
                     placeholder="5421 E Desert Ridge Dr, Phoenix, AZ"
-                    className="flex-1 bg-[#2B2B2B] border border-[#4B5436]/30 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#C7BBA3]/40"
+                    className="flex-1 bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
                   />
                   <button
                     onClick={handleLookup}
                     disabled={lookingUp || !form.address.trim()}
-                    className="flex items-center gap-1.5 px-3 py-2.5 text-xs text-[#C7BBA3] bg-[#C7BBA3]/10 hover:bg-[#C7BBA3]/20 border border-[#C7BBA3]/20 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-2.5 text-xs text-[#5A6247] bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.10] border border-[#5A6247]/20 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                   >
                     {lookingUp ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -685,9 +685,9 @@ export default function PortfolioPage() {
                   </button>
                 </div>
                 {lookupError && (
-                  <p className="text-xs text-red-400 mt-1">{lookupError}</p>
+                  <p className="text-xs text-red-500 mt-1">{lookupError}</p>
                 )}
-                <p className="text-[10px] text-white/25 mt-1">
+                <p className="text-[10px] text-[#B5B2A9] mt-1">
                   Fetches estimated value from Rentcast (requires RENTCAST_API_KEY)
                 </p>
               </div>
@@ -695,24 +695,24 @@ export default function PortfolioPage() {
               {/* Location + Type */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-white/40 mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
                     Location
                   </label>
                   <input
                     value={form.location}
                     onChange={(e) => setField("location", e.target.value)}
                     placeholder="Phoenix, AZ"
-                    className="w-full bg-[#2B2B2B] border border-[#4B5436]/30 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#C7BBA3]/40"
+                    className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-white/40 mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
                     Type
                   </label>
                   <select
                     value={form.type}
                     onChange={(e) => setField("type", e.target.value)}
-                    className="w-full bg-[#2B2B2B] border border-[#4B5436]/30 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#C7BBA3]/40"
+                    className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] focus:outline-none focus:border-[#5A6247]/30"
                   >
                     <option value="STR">STR</option>
                     <option value="Primary">Primary</option>
@@ -723,7 +723,7 @@ export default function PortfolioPage() {
               {/* Estimated value + Monthly income */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-white/40 mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
                     Est. value ($)
                   </label>
                   <input
@@ -731,11 +731,11 @@ export default function PortfolioPage() {
                     onChange={(e) => setField("propVal", e.target.value)}
                     placeholder="685000"
                     type="number"
-                    className="w-full bg-[#2B2B2B] border border-[#4B5436]/30 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#C7BBA3]/40"
+                    className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-white/40 mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
                     Monthly income ($)
                   </label>
                   <input
@@ -743,76 +743,76 @@ export default function PortfolioPage() {
                     onChange={(e) => setField("income", e.target.value)}
                     placeholder="4850"
                     type="number"
-                    className="w-full bg-[#2B2B2B] border border-[#4B5436]/30 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#C7BBA3]/40"
+                    className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
                   />
                 </div>
               </div>
 
               {/* Mortgage section */}
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-white/40 mb-2">
+                <p className="text-[11px] uppercase tracking-wider text-[#6E6B64] mb-2">
                   Mortgage (optional)
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] text-white/30 mb-1">Balance ($)</label>
+                    <label className="block text-[10px] text-[#78756E] mb-1">Balance ($)</label>
                     <input
                       value={form.mortBal}
                       onChange={(e) => setField("mortBal", e.target.value)}
                       placeholder="412000"
                       type="number"
-                      className="w-full bg-[#2B2B2B] border border-[#4B5436]/30 rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#C7BBA3]/40"
+                      className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-white/30 mb-1">Original ($)</label>
+                    <label className="block text-[10px] text-[#78756E] mb-1">Original ($)</label>
                     <input
                       value={form.mortOrig}
                       onChange={(e) => setField("mortOrig", e.target.value)}
                       placeholder="540000"
                       type="number"
-                      className="w-full bg-[#2B2B2B] border border-[#4B5436]/30 rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#C7BBA3]/40"
+                      className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-white/30 mb-1">Monthly payment ($)</label>
+                    <label className="block text-[10px] text-[#78756E] mb-1">Monthly payment ($)</label>
                     <input
                       value={form.mortPay}
                       onChange={(e) => setField("mortPay", e.target.value)}
                       placeholder="2850"
                       type="number"
-                      className="w-full bg-[#2B2B2B] border border-[#4B5436]/30 rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#C7BBA3]/40"
+                      className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-white/30 mb-1">Rate (%)</label>
+                    <label className="block text-[10px] text-[#78756E] mb-1">Rate (%)</label>
                     <input
                       value={form.mortRate}
                       onChange={(e) => setField("mortRate", e.target.value)}
                       placeholder="7.1"
                       type="number"
                       step="0.01"
-                      className="w-full bg-[#2B2B2B] border border-[#4B5436]/30 rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#C7BBA3]/40"
+                      className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
                     />
                   </div>
                 </div>
               </div>
 
               {saveError && (
-                <p className="text-xs text-red-400">{saveError}</p>
+                <p className="text-xs text-red-500">{saveError}</p>
               )}
 
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-2.5 text-sm text-white/50 hover:text-white border border-[#4B5436]/20 rounded-xl transition-colors"
+                  className="flex-1 py-2.5 text-sm text-[#6E6B64] hover:text-[#2B2B28] border border-[#E2DFD6] rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveProperty}
                   disabled={saving}
-                  className="flex-1 py-2.5 text-sm font-medium text-[#2B2B2B] bg-[#C7BBA3] hover:bg-[#C7BBA3]/90 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 text-sm font-medium text-white bg-[#5A6247] hover:bg-[#4A5239] rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Save property

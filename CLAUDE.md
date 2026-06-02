@@ -61,6 +61,7 @@ The app is fully live: sign-up → email confirmation → dashboard → edit val
 - **Vercel** — deployment (auto-deploys on push to `main`)
 - **Vanilla CSS** in `app/globals.css` — used in `/dashboard`. DO NOT refactor to Tailwind
 - **Tailwind CSS v4** + **shadcn/ui** + **recharts** + **lucide-react** — used in `/dashboard` (main product)
+- **Fraunces** (display serif) + **Inter** (UI/body sans) via `next/font/google` — loaded in `app/layout.tsx`, mapped onto Tailwind's `font-serif`/`font-sans` tokens in `globals.css` `@theme`. `font-serif` → Fraunces, default body + `font-sans` → Inter. (Round 10)
 - **@dnd-kit/core** + **@dnd-kit/sortable** + **@dnd-kit/utilities** — drag-to-reorder on portfolio page
 
 ## Project structure
@@ -123,7 +124,11 @@ Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQ
    - **When adding a new deploy URL, always add it to Supabase redirect URLs or auth will break**
 
 ## Key decisions & gotchas
-- **CSS split**: `/dashboard` uses vanilla CSS in `globals.css` (warm whites, no dark mode) — keep as-is. `/homeos` and `/v0` use Tailwind v4. Don't mix them.
+- **Theme = light "Warm Editorial" (current)**: `/dashboard`, all its sub-pages, AND `login`/`signup` use the light theme (see DECISION_LOG Rounds 8–9). Tokens: page bg `#FAF9F6`, cards `#fff`, text `#2B2B28`, accent olive `#5A6247` (hover `#4A5239`), warm hairline borders (`#EAE8E1`/`#E2DFD6`/`#D8D5CB`). **Do NOT reintroduce `#2B2B2B`/`#353530`/`#4B5436`/`#C7BBA3`, the legacy `#1a1a18`/`#888780`, or `text-white` on light surfaces** — all retired. Status colors use `-600/-500` shades for contrast on white. (recharts tooltip keeps `#2B2B2B` text on `#fff` bg — intentional, dark-on-light tooltip.)
+- **Earthy status palette (Round 10)**: the semantic green/amber/red Tailwind tokens are remapped in `globals.css` `@theme` to muted editorial tones — `emerald` → forest (`#7E9F88`/`#5C7E68`/`#3F6A4E`), `amber` → ochre (`#C39A55`/`#A9792F`/`#855A20`), `red` → brick (`#C2675A`/`#A8463B`/`#97362D`) at shades 400/500/600. So existing `text-emerald-600`/`bg-amber-500/15`/`border-red-500` classes inherit the new tones with zero per-file churn. Text shades (600) verified AA on white (forest 6.2:1, ochre 6.0:1, brick 5.8:1). The utility AreaChart series (electric/water/gas) and equity donut were recolored to ochre/slate-teal (`#5E7C88`)/clay (`#B0654A`) + brand olive to match. **Don't reintroduce bright `emerald-`/`amber-`/`red-` hexes or `#f59e0b`/`#3b82f6`/`#f97316`/`#10b981`.**
+- **Muted text ramp is AA-tuned (Round 9)**: for *text*, use `#57554F` (secondary, 7.5:1), `#6E6B64` (muted, 5.3:1), `#78756E` (faint-but-legible, 4.6:1). `#8A8780` (3.6:1) and `#A8A59E` (2.5:1) FAIL WCAG AA for small text — use them ONLY for decorative bits (status dots, dividers, icon glyphs), never labels/values. Numeric displays carry `.tnum` (tabular figures). Keyboard focus is a global `:focus-visible` olive ring in `globals.css` — never add `focus:outline-none` without a `:focus-visible` replacement.
+- **Polish utilities in `globals.css`**: `.shadow-soft` (layered card shadow), `.card-lift` (hover lift on interactive cards), `.animate-rise` + `.stagger` (entrance fade/rise, staggered children), `.animate-modal`/`.animate-overlay` (modal pop-in). All respect `prefers-reduced-motion`. The shadcn `<Card>` (`components/ui/card.tsx`) ships `shadow-soft` by default. Reuse these instead of hand-rolling shadows/animations.
+- **CSS split**: `app/legacy/dashboard` uses vanilla CSS classes in `globals.css` (the `.dash`/`.card`/`.metric` rules). `/dashboard` (main product) uses Tailwind v4 + shadcn. Don't mix them; don't refactor the legacy vanilla rules to Tailwind.
 - **Charts**: `/dashboard` uses inline SVG — no chart library. `/v0` uses recharts (AreaChart, BarChart).
 - **Analytics section**: Removed from the prototype intentionally — keeping the dashboard lean. Revisit once real data sources are connected.
 - **State management**: `useReducer` in `app/dashboard/page.tsx`. Each save dispatches to local state AND upserts to Supabase immediately — no separate save button.

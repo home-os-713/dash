@@ -44,38 +44,38 @@ export default function InboxPage() {
 
   const tabs: { key: Filter; label: string; count: number; tone?: string }[] = [
     { key: "all", label: "All", count: counts.all },
-    { key: "urgent", label: "Urgent", count: counts.urgent, tone: "text-red-400" },
-    { key: "soon", label: "Soon", count: counts.soon, tone: "text-amber-400" },
+    { key: "urgent", label: "Urgent", count: counts.urgent, tone: "text-red-500" },
+    { key: "soon", label: "Soon", count: counts.soon, tone: "text-amber-600" },
     { key: "review", label: "Review", count: counts.review, tone: "text-blue-400" },
     { key: "bookings", label: "Bookings", count: counts.bookings },
   ];
 
   return (
-    <div className="min-h-screen bg-[#2B2B2B] text-white">
-      <header className="sticky top-0 z-50 bg-[#4B5436]/95 backdrop-blur-xl border-b border-[#4B5436]/20">
+    <div className="min-h-screen bg-[#FAF9F6] text-[#2B2B28]">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#E2DFD6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-2 text-white/50 hover:text-white text-sm">
+            <Link href="/dashboard" className="flex items-center gap-2 text-[#6E6B64] hover:text-[#2B2B28] text-sm">
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Portfolio</span>
             </Link>
-            <div className="h-5 w-px bg-[#C7BBA3]/15" />
+            <div className="h-5 w-px bg-[#5A6247]/[0.08]" />
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-[#4B5436] flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-[#5A6247] flex items-center justify-center">
                 <Inbox className="w-4 h-4 text-white" />
               </div>
               <span className="font-serif text-lg font-bold tracking-tight">Inbox</span>
             </div>
           </div>
-          <button className="relative p-2 rounded-xl hover:bg-[#4B5436]/20 transition-colors">
-            <Bell className="w-5 h-5 text-white/60" />
+          <button className="relative p-2 rounded-xl hover:bg-[#5A6247]/[0.08] transition-colors">
+            <Bell className="w-5 h-5 text-[#6E6B64]" />
             {counts.urgent > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-400 rounded-full" />}
           </button>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4">
-        <div className="flex items-center gap-2 text-[10px] text-white/30 uppercase tracking-wider">
+        <div className="flex items-center gap-2 text-[10px] text-[#78756E] uppercase tracking-wider">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
           Simulated demo data
         </div>
@@ -88,12 +88,12 @@ export default function InboxPage() {
               onClick={() => setFilter(t.key)}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs whitespace-nowrap transition-colors border ${
                 filter === t.key
-                  ? "bg-[#C7BBA3]/15 border-[#C7BBA3]/30 text-white"
-                  : "bg-white/[0.02] border-[#4B5436]/15 text-white/50 hover:text-white"
+                  ? "bg-[#5A6247]/[0.08] border-[#5A6247]/25 text-[#2B2B28]"
+                  : "bg-black/[0.015] border-[#EAE8E1] text-[#6E6B64] hover:text-[#2B2B28]"
               }`}
             >
               <span className="font-medium">{t.label}</span>
-              <span className={`text-[10px] ${t.tone ?? "text-white/40"}`}>{t.count}</span>
+              <span className={`text-[10px] ${t.tone ?? "text-[#6E6B64]"}`}>{t.count}</span>
             </button>
           ))}
         </div>
@@ -107,7 +107,7 @@ export default function InboxPage() {
               return (
                 <div
                   key={action.id}
-                  className={`flex items-center gap-3 p-3 sm:p-4 rounded-xl border ${ps.border} hover:bg-[#4B5436]/10 transition-colors`}
+                  className={`flex items-center gap-3 p-3 sm:p-4 rounded-xl border ${ps.border} hover:bg-[#5A6247]/[0.06] transition-colors`}
                 >
                   <Badge className={`${ps.badge} border-0 text-[10px] px-2 py-0.5 uppercase tracking-wide shrink-0`}>
                     {action.priority}
@@ -117,18 +117,18 @@ export default function InboxPage() {
                       <p className="text-sm font-medium leading-tight">{action.label}</p>
                       <Link
                         href={`/dashboard/${property.id}`}
-                        className="inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-[#C7BBA3] transition-colors bg-white/[0.04] border border-[#4B5436]/15 rounded-md px-1.5 py-0.5"
+                        className="inline-flex items-center gap-1 text-[10px] text-[#6E6B64] hover:text-[#5A6247] transition-colors bg-black/[0.025] border border-[#EAE8E1] rounded-md px-1.5 py-0.5"
                       >
                         <property.icon className="w-3 h-3" />
                         {property.name}
                       </Link>
                     </div>
-                    <p className="text-xs text-white/40 mt-1">{action.detail}</p>
+                    <p className="text-xs text-[#6E6B64] mt-1">{action.detail}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {action.dueIn && <span className="text-[10px] text-white/30 hidden sm:inline">{action.dueIn}</span>}
+                    {action.dueIn && <span className="text-[10px] text-[#78756E] hidden sm:inline">{action.dueIn}</span>}
                     {action.ctaLabel && (
-                      <button className="text-[11px] font-medium text-[#C7BBA3] bg-[#C7BBA3]/10 hover:bg-[#C7BBA3]/20 border border-[#C7BBA3]/20 rounded-lg px-2.5 py-1.5 transition-colors">
+                      <button className="text-[11px] font-medium text-[#5A6247] bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.10] border border-[#5A6247]/20 rounded-lg px-2.5 py-1.5 transition-colors">
                         {action.ctaLabel}
                       </button>
                     )}
@@ -142,24 +142,24 @@ export default function InboxPage() {
               return (
                 <div
                   key={email.id}
-                  className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-[#4B5436]/10 bg-white/[0.02] hover:bg-[#4B5436]/10 transition-colors"
+                  className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-[#EFEDE7] bg-black/[0.015] hover:bg-[#5A6247]/[0.06] transition-colors"
                 >
-                  <Mail className="w-4 h-4 text-white/30 shrink-0" />
+                  <Mail className="w-4 h-4 text-[#78756E] shrink-0" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium leading-tight">{email.parsedAs}</p>
                       <Link
                         href={`/dashboard/${property.id}`}
-                        className="inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-[#C7BBA3] transition-colors bg-white/[0.04] border border-[#4B5436]/15 rounded-md px-1.5 py-0.5"
+                        className="inline-flex items-center gap-1 text-[10px] text-[#6E6B64] hover:text-[#5A6247] transition-colors bg-black/[0.025] border border-[#EAE8E1] rounded-md px-1.5 py-0.5"
                       >
                         <property.icon className="w-3 h-3" />
                         {property.name}
                       </Link>
-                      <span className="text-[10px] text-white/30">{email.receivedAt}</span>
+                      <span className="text-[10px] text-[#78756E]">{email.receivedAt}</span>
                     </div>
-                    <p className="text-xs text-white/40 mt-1">{email.from}</p>
+                    <p className="text-xs text-[#6E6B64] mt-1">{email.from}</p>
                   </div>
-                  <button className="text-[11px] font-medium text-[#C7BBA3] bg-[#C7BBA3]/10 hover:bg-[#C7BBA3]/20 border border-[#C7BBA3]/20 rounded-lg px-2.5 py-1.5 transition-colors shrink-0">
+                  <button className="text-[11px] font-medium text-[#5A6247] bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.10] border border-[#5A6247]/20 rounded-lg px-2.5 py-1.5 transition-colors shrink-0">
                     Confirm
                   </button>
                 </div>
@@ -168,8 +168,8 @@ export default function InboxPage() {
           </div>
         ) : (
           <div className="flex items-center gap-3 bg-emerald-500/5 border border-emerald-500/15 rounded-2xl p-4">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-            <p className="text-sm text-emerald-400/80">All clear — nothing in this lane.</p>
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <p className="text-sm text-emerald-600/80">All clear — nothing in this lane.</p>
           </div>
         )}
 
@@ -177,12 +177,12 @@ export default function InboxPage() {
         <div className="pt-2">
           <button
             onClick={() => setPastExpanded(!pastExpanded)}
-            className="flex items-center gap-2 text-sm text-white/40 hover:text-white/60 transition-colors w-full"
+            className="flex items-center gap-2 text-sm text-[#6E6B64] hover:text-[#6E6B64] transition-colors w-full"
           >
             {pastExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             <span>Past actions</span>
-            <span className="text-[10px] text-white/30">{autoHandled.length}</span>
-            <div className="flex-1 h-px bg-white/[0.06] ml-2" />
+            <span className="text-[10px] text-[#78756E]">{autoHandled.length}</span>
+            <div className="flex-1 h-px bg-black/[0.04] ml-2" />
           </button>
           {pastExpanded && (
             <div className="space-y-2 mt-3">
@@ -191,23 +191,23 @@ export default function InboxPage() {
                 return (
                   <div
                     key={h.id}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[#4B5436]/10 bg-white/[0.02]"
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[#EFEDE7] bg-black/[0.015]"
                   >
                     <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium leading-tight text-white/70">{h.label}</p>
+                        <p className="text-sm font-medium leading-tight text-[#57554F]">{h.label}</p>
                         <Link
                           href={`/dashboard/${property.id}`}
-                          className="inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-[#C7BBA3] bg-white/[0.04] border border-[#4B5436]/15 rounded-md px-1.5 py-0.5"
+                          className="inline-flex items-center gap-1 text-[10px] text-[#6E6B64] hover:text-[#5A6247] bg-black/[0.025] border border-[#EAE8E1] rounded-md px-1.5 py-0.5"
                         >
                           <property.icon className="w-3 h-3" />
                           {property.name}
                         </Link>
                       </div>
-                      <p className="text-xs text-white/40 mt-0.5">{h.detail}</p>
+                      <p className="text-xs text-[#6E6B64] mt-0.5">{h.detail}</p>
                     </div>
-                    <p className="text-[10px] text-white/30 shrink-0">{h.date}</p>
+                    <p className="text-[10px] text-[#78756E] shrink-0">{h.date}</p>
                   </div>
                 );
               })}
@@ -215,7 +215,7 @@ export default function InboxPage() {
           )}
         </div>
 
-        <p className="text-white/30 text-xs italic pt-2">v0 preview — actions, emails, and savings are demo data.</p>
+        <p className="text-[#78756E] text-xs italic pt-2">v0 preview — actions, emails, and savings are demo data.</p>
       </main>
     </div>
   );

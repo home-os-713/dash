@@ -1,11 +1,136 @@
 @import "tailwindcss";
 
+/* ── Typeface system ─────────────────────────────────────────────────────────
+   Display serif: Fraunces (warm, editorial). UI/body: Inter (crisp, neutral).
+   Loaded in app/layout.tsx via next/font; mapped onto Tailwind's font tokens so
+   `font-serif` → Fraunces and `font-sans` (the default) → Inter everywhere. */
+@theme {
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, Cambria, "Times New Roman", serif;
+
+  /* ── Earthy status palette ─────────────────────────────────────────────────
+     The semantic green/amber/red are remapped to muted, editorial tones that
+     sit beside the olive accent (#5A6247) instead of fighting it. Every existing
+     emerald-/amber-/red- utility inherits these automatically. Text shades (600)
+     are tuned to clear WCAG AA on white (forest 6.2:1, ochre 6.0:1, brick 5.8:1).
+
+     forest  ← emerald  (on autopay / healthy / positive) */
+  --color-emerald-400: #7E9F88; /* dots, gradient stops */
+  --color-emerald-500: #5C7E68; /* fills, borders */
+  --color-emerald-600: #3F6A4E; /* text */
+
+  /* ochre/clay ← amber  (due soon / caution) */
+  --color-amber-400: #C39A55;
+  --color-amber-500: #A9792F;
+  --color-amber-600: #855A20;
+
+  /* brick ← red  (overdue / error / negative) */
+  --color-red-400: #C2675A;
+  --color-red-500: #A8463B;
+  --color-red-600: #97362D;
+}
+
 @layer base {
   * { box-sizing: border-box; margin: 0; padding: 0; }
 }
 
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+body {
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv05" 1, "cv08" 1, "ss03" 1; /* refined Inter glyphs: single-story a, curved l, etc. */
+  letter-spacing: -0.006em;
+}
 body:has(.dash) { background: #f5f5f3; color: #1a1a18; padding: 2rem; }
+
+/* ── Serif display refinement ────────────────────────────────────────────────
+   Fraunces is optical-sized; let the browser pick the right cut per font-size,
+   tighten tracking a touch at display sizes, and lean into its soft-serif curves. */
+.font-serif {
+  font-optical-sizing: auto;
+  letter-spacing: -0.014em;
+  font-feature-settings: "ss01" 1; /* Fraunces stylistic set — softer, warmer terminals */
+}
+
+/* ── Apple-grade polish layer (Warm Editorial light theme) ─────────────── */
+
+/* Soft, layered card shadow — subtle at rest, lifts on hover. */
+.shadow-soft {
+  box-shadow:
+    0 1px 2px rgba(43, 43, 40, 0.04),
+    0 12px 28px -16px rgba(43, 43, 40, 0.14);
+}
+
+/* Interactive cards: smooth spring-like lift on hover. */
+.card-lift {
+  transition:
+    box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color 0.3s ease;
+  will-change: transform;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 6px 14px rgba(43, 43, 40, 0.06),
+    0 28px 56px -24px rgba(43, 43, 40, 0.22);
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-lift:hover { transform: none; }
+}
+
+/* Gentle entrance: fade + rise. */
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-rise { animation: riseIn 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+
+/* Staggered children — direct children rise in sequence. */
+.stagger > * { animation: riseIn 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger > *:nth-child(2) { animation-delay: 0.07s; }
+.stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.stagger > *:nth-child(4) { animation-delay: 0.17s; }
+.stagger > *:nth-child(5) { animation-delay: 0.22s; }
+.stagger > *:nth-child(6) { animation-delay: 0.27s; }
+.stagger > *:nth-child(7) { animation-delay: 0.32s; }
+.stagger > *:nth-child(8) { animation-delay: 0.37s; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise, .stagger > * { animation: none; }
+}
+
+/* Modal pop-in. */
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-modal { animation: modalIn 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+.animate-overlay { animation: overlayIn 0.2s ease-out both; }
+
+/* ── Accessibility: visible keyboard focus (only on keyboard nav) ───────── */
+/* Pointer clicks don't trigger :focus-visible, so this stays invisible for
+   mouse users (keeps the UI clean) while giving keyboard users a clear ring. */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(90, 98, 71, 0.55); /* olive #5A6247 */
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+/* Inputs carry their own focus ring; don't double up the offset. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible { outline-offset: 0; }
+
+/* ── Finance-grade numerals: align digits in columns ───────────────────── */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
 .dash { max-width: 900px; margin: 0 auto; }
 .section-title { font-size: 13px; font-weight: 500; color: #888780; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
 .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
