@@ -69,7 +69,7 @@ const BILL_CATEGORIES = [
 ] as const;
 
 const categoryColors: Record<string, string> = {
-  Mortgage: "bg-[#5A6247]",
+  Mortgage: "bg-accent",
   Utilities: "bg-amber-400",
   Insurance: "bg-blue-400",
   HOA: "bg-violet-400",
@@ -235,21 +235,21 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
   const mortArc = circ - equityArc;
 
   // ── Modal shared styles ───────────────────────────────────────────────────
-  const inputCls = "w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2 text-sm text-[#2B2B28] placeholder-[#8A8780] focus:outline-none focus:border-[#BDB9AC]";
-  const labelCls = "block text-xs text-[#6E6B64] mb-1";
+  const inputCls = "w-full bg-paper border border-line3 rounded-xl px-3 py-2 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-line3";
+  const labelCls = "block text-xs text-muted mb-1";
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 animate-rise stagger">
 
       {/* ── 1. Hero banner ────────────────────────────────────────────────── */}
-      <div className={`bg-white rounded-2xl border border-[#EAE8E1] shadow-soft ${hc.border} border-l-4 p-5 sm:p-6`}>
+      <div className={`bg-surface rounded-2xl border border-line shadow-soft ${hc.border} border-l-4 p-5 sm:p-6`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start sm:items-center gap-4">
             <div className={`w-12 h-12 rounded-2xl ${hc.scoreBg} flex items-center justify-center shrink-0`}>
               <span className={`text-xl font-bold tnum ${hc.text}`}>{healthScore}</span>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-[#6E6B64] mb-0.5">
+              <p className="text-[11px] uppercase tracking-wider text-muted mb-0.5">
                 {prop.location ?? prop.address ?? "—"} · {prop.type ?? "Property"}
               </p>
               <h1 className="text-xl sm:text-2xl font-serif font-bold">{prop.name ?? "Untitled property"}</h1>
@@ -258,8 +258,8 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                   <span className={`w-2 h-2 rounded-full ${hc.dot}`} />
                   {healthLabel}
                 </span>
-                <span className="text-[#C4C1B8]">·</span>
-                <span className="text-[#6E6B64] text-xs">
+                <span className="text-faint2">·</span>
+                <span className="text-muted text-xs">
                   {bills.length} bills · {onAutopay} autopay · {totalDue > 0 ? fmtCurrency(totalDue) : "—"} due
                 </span>
               </div>
@@ -269,18 +269,18 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
             {(["Bills", "Finances", "Mortgage"] as const).map((label) => {
               const s = label === "Bills" ? billsDomainStatus : label === "Finances" ? finDomainStatus : mortDomainStatus;
               return (
-                <div key={label} className="flex items-center gap-1.5 bg-black/[0.025] rounded-lg px-2.5 py-1.5 border border-[#EFEDE7]">
+                <div key={label} className="flex items-center gap-1.5 bg-tint/[0.025] rounded-lg px-2.5 py-1.5 border border-subtle">
                   <span className={`w-1.5 h-1.5 rounded-full ${domainDot(s)}`} />
-                  <span className="text-xs text-[#6E6B64]">{label}</span>
+                  <span className="text-xs text-muted">{label}</span>
                 </div>
               );
             })}
             <button
               onClick={() => setShowPropModal(true)}
-              className="flex items-center gap-1.5 bg-black/[0.025] hover:bg-black/[0.05] border border-[#E2DFD6] rounded-lg px-2.5 py-1.5 transition-colors"
+              className="flex items-center gap-1.5 bg-tint/[0.025] hover:bg-tint/[0.05] border border-line2 rounded-lg px-2.5 py-1.5 transition-colors"
             >
-              <Pencil className="w-3.5 h-3.5 text-[#6E6B64]" />
-              <span className="text-xs text-[#6E6B64]">Edit</span>
+              <Pencil className="w-3.5 h-3.5 text-muted" />
+              <span className="text-xs text-muted">Edit</span>
             </button>
           </div>
         </div>
@@ -289,38 +289,38 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
       {/* ── 2. KPI cards ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
         {/* Est. value */}
-        <div className="bg-white border border-[#EAE8E1] rounded-2xl shadow-soft p-4">
-          <p className="text-[11px] uppercase tracking-wider text-[#6E6B64] mb-3">Est. Value</p>
-          <p className="text-2xl font-bold tnum text-[#5A6247]">{propVal > 0 ? fmtCurrency(propVal) : "—"}</p>
-          <p className="text-xs text-[#78756E] mt-1">Property</p>
+        <div className="bg-surface border border-line rounded-2xl shadow-soft p-4">
+          <p className="text-[11px] uppercase tracking-wider text-muted mb-3">Est. Value</p>
+          <p className="text-2xl font-bold tnum text-accentfg">{propVal > 0 ? fmtCurrency(propVal) : "—"}</p>
+          <p className="text-xs text-faint mt-1">Property</p>
         </div>
         {/* Equity */}
-        <div className="bg-white border border-[#EAE8E1] rounded-2xl shadow-soft p-4">
-          <p className="text-[11px] uppercase tracking-wider text-[#6E6B64] mb-3">Equity</p>
+        <div className="bg-surface border border-line rounded-2xl shadow-soft p-4">
+          <p className="text-[11px] uppercase tracking-wider text-muted mb-3">Equity</p>
           <p className="text-2xl font-bold tnum text-emerald-600">{equity > 0 ? fmtCurrency(equity) : "—"}</p>
-          <p className="text-xs text-[#78756E] mt-1">
+          <p className="text-xs text-faint mt-1">
             {equity > 0 ? `${equityPct}% of value` : "Add value & mortgage"}
           </p>
         </div>
         {/* Monthly cash flow */}
-        <div className="bg-white border border-[#EAE8E1] rounded-2xl shadow-soft p-4">
-          <p className="text-[11px] uppercase tracking-wider text-[#6E6B64] mb-3">Monthly Cash Flow</p>
-          <p className={`text-2xl font-bold tnum ${noi > 0 ? "text-emerald-600" : noi < 0 ? "text-red-500" : "text-[#5A6247]"}`}>
+        <div className="bg-surface border border-line rounded-2xl shadow-soft p-4">
+          <p className="text-[11px] uppercase tracking-wider text-muted mb-3">Monthly Cash Flow</p>
+          <p className={`text-2xl font-bold tnum ${noi > 0 ? "text-emerald-600" : noi < 0 ? "text-red-500" : "text-accentfg"}`}>
             {income > 0 ? fmtCurrency(noi) : "—"}
           </p>
-          <p className="text-xs text-[#78756E] mt-1">NOI</p>
+          <p className="text-xs text-faint mt-1">NOI</p>
         </div>
         {/* Bills due */}
-        <div className="bg-white border border-[#EAE8E1] rounded-2xl shadow-soft p-4">
-          <p className="text-[11px] uppercase tracking-wider text-[#6E6B64] mb-3">Bills Due</p>
-          <p className="text-2xl font-bold tnum text-[#5A6247]">{totalDue > 0 ? fmtCurrency(totalDue) : "—"}</p>
+        <div className="bg-surface border border-line rounded-2xl shadow-soft p-4">
+          <p className="text-[11px] uppercase tracking-wider text-muted mb-3">Bills Due</p>
+          <p className="text-2xl font-bold tnum text-accentfg">{totalDue > 0 ? fmtCurrency(totalDue) : "—"}</p>
           <p className="text-xs mt-1">
             {health.urgentCount > 0 ? (
               <span className="text-red-500 font-medium">{health.urgentCount} overdue</span>
             ) : health.soonCount > 0 ? (
               <span className="text-amber-600 font-medium">{health.soonCount} due soon</span>
             ) : (
-              <span className="text-[#78756E]">{bills.length} bills · {onAutopay} autopay</span>
+              <span className="text-faint">{bills.length} bills · {onAutopay} autopay</span>
             )}
           </p>
         </div>
@@ -351,11 +351,11 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
 
         if (actionItems.length === 0) {
           return (
-            <div className="flex items-center gap-3 bg-white border border-[#EAE8E1] rounded-2xl shadow-soft px-5 py-4">
+            <div className="flex items-center gap-3 bg-surface border border-line rounded-2xl shadow-soft px-5 py-4">
               <div className="w-8 h-8 rounded-xl bg-emerald-400/10 flex items-center justify-center shrink-0">
                 <Activity className="w-4 h-4 text-emerald-600" />
               </div>
-              <p className="text-sm text-[#6E6B64]">All clear — no action needed right now</p>
+              <p className="text-sm text-muted">All clear — no action needed right now</p>
             </div>
           );
         }
@@ -366,12 +366,12 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
         };
 
         return (
-          <Card className="bg-white border-[#EAE8E1] text-[#2B2B28]">
+          <Card className="bg-surface border-line text-ink">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-[#57554F] flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-ink2 flex items-center gap-2">
                 <Wrench className="w-4 h-4" />
                 Needs your attention
-                <Badge className="bg-[#5A6247]/[0.08] text-[#5A6247] border-0 text-xs px-2 ml-auto">
+                <Badge className="bg-accentfg/[0.08] text-accentfg border-0 text-xs px-2 ml-auto">
                   {actionItems.length}
                 </Badge>
               </CardTitle>
@@ -382,16 +382,16 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                 return (
                   <div
                     key={action.id}
-                    className={`flex items-center gap-3 p-3 rounded-xl border ${ps.border} hover:bg-[#5A6247]/[0.06] transition-colors`}
+                    className={`flex items-center gap-3 p-3 rounded-xl border ${ps.border} hover:bg-accentfg/[0.06] transition-colors`}
                   >
                     <Badge className={`${ps.badge} border-0 text-[10px] px-2 py-0.5 uppercase tracking-wide shrink-0`}>
                       {action.priority}
                     </Badge>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium leading-tight">{action.label}</p>
-                      <p className="text-xs text-[#6E6B64] mt-0.5">{action.detail}</p>
+                      <p className="text-xs text-muted mt-0.5">{action.detail}</p>
                     </div>
-                    <button className="text-[11px] font-medium text-[#5A6247] bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.10] border border-[#5A6247]/20 rounded-lg px-2.5 py-1.5 transition-colors shrink-0">
+                    <button className="text-[11px] font-medium text-accentfg bg-accentfg/[0.06] hover:bg-accentfg/[0.10] border border-accentfg/20 rounded-lg px-2.5 py-1.5 transition-colors shrink-0">
                       {action.ctaLabel}
                     </button>
                   </div>
@@ -407,9 +407,9 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 stagger">
           {/* Equity ring */}
           {propVal > 0 && (
-            <Card className="bg-white border-[#EAE8E1] text-[#2B2B28]">
+            <Card className="bg-surface border-line text-ink">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-[#57554F]">Equity</CardTitle>
+                <CardTitle className="text-sm font-medium text-ink2">Equity</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-6">
@@ -424,23 +424,23 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                         strokeLinecap="round"
                       />
                     )}
-                    <text x="45" y="42" textAnchor="middle" fill="#5A6247" fontSize="14" fontWeight="bold">{equityPct}%</text>
-                    <text x="45" y="56" textAnchor="middle" fill="rgba(43,43,40,0.45)" fontSize="10">equity</text>
+                    <text x="45" y="42" textAnchor="middle" style={{ fill: "var(--accentfg)" }} fontSize="14" fontWeight="bold">{equityPct}%</text>
+                    <text x="45" y="56" textAnchor="middle" style={{ fill: "var(--faint)" }} fontSize="10">equity</text>
                   </svg>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <p className="text-[11px] text-[#6E6B64]">Equity</p>
+                      <p className="text-[11px] text-muted">Equity</p>
                       <p className="font-semibold text-emerald-600">{fmtCurrency(equity)}</p>
                     </div>
                     {mortBal > 0 && (
                       <div>
-                        <p className="text-[11px] text-[#6E6B64]">Balance</p>
-                        <p className="font-semibold text-[#57554F]">{fmtCurrency(mortBal)}</p>
+                        <p className="text-[11px] text-muted">Balance</p>
+                        <p className="font-semibold text-ink2">{fmtCurrency(mortBal)}</p>
                       </div>
                     )}
                     <div>
-                      <p className="text-[11px] text-[#6E6B64]">Est. Value</p>
-                      <p className="font-semibold text-[#5A6247]">{fmtCurrency(propVal)}</p>
+                      <p className="text-[11px] text-muted">Est. Value</p>
+                      <p className="font-semibold text-accentfg">{fmtCurrency(propVal)}</p>
                     </div>
                   </div>
                 </div>
@@ -449,12 +449,12 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
           )}
 
           {/* Mortgage card */}
-          <Card className="bg-white border-[#EAE8E1] text-[#2B2B28]">
+          <Card className="bg-surface border-line text-ink">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-[#57554F] flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-ink2 flex items-center justify-between">
                 <span>Mortgage</span>
-                <button onClick={() => setShowMortgageModal(true)} className="p-1 rounded-lg hover:bg-black/[0.04] transition-colors">
-                  <Pencil className="w-3.5 h-3.5 text-[#6E6B64]" />
+                <button onClick={() => setShowMortgageModal(true)} className="p-1 rounded-lg hover:bg-tint/[0.04] transition-colors">
+                  <Pencil className="w-3.5 h-3.5 text-muted" />
                 </button>
               </CardTitle>
             </CardHeader>
@@ -462,15 +462,15 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
               {mortPay > 0 ? (
                 <div className="space-y-3">
                   <div className="flex items-end gap-1.5">
-                    <span className="text-2xl font-bold tnum text-[#5A6247]">{fmtCurrency(mortPay)}</span>
-                    <span className="text-[#6E6B64] text-sm mb-0.5">/mo</span>
+                    <span className="text-2xl font-bold tnum text-accentfg">{fmtCurrency(mortPay)}</span>
+                    <span className="text-muted text-sm mb-0.5">/mo</span>
                     {mortRate > 0 && (
-                      <span className="text-[#6E6B64] text-xs mb-0.5 ml-1">{mortRate}%</span>
+                      <span className="text-muted text-xs mb-0.5 ml-1">{mortRate}%</span>
                     )}
                   </div>
                   {mortBal > 0 && mortOrig > 0 && (
                     <div>
-                      <div className="w-full h-2 bg-[#5A6247]/[0.08] rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-accentfg/[0.08] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full"
                           style={{
@@ -480,8 +480,8 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                         />
                       </div>
                       <div className="flex justify-between mt-1">
-                        <span className="text-[10px] text-[#78756E]">Paid {fmtCurrency(mortOrig - mortBal)}</span>
-                        <span className="text-[10px] text-[#78756E]">of {fmtCurrency(mortOrig)}</span>
+                        <span className="text-[10px] text-faint">Paid {fmtCurrency(mortOrig - mortBal)}</span>
+                        <span className="text-[10px] text-faint">of {fmtCurrency(mortOrig)}</span>
                       </div>
                     </div>
                   )}
@@ -493,13 +493,13 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                     return (
                       <div className="flex gap-4 pt-1">
                         <div>
-                          <p className="text-[10px] text-[#78756E]">Interest/mo</p>
-                          <p className="text-xs font-medium text-[#6E6B64]">{fmtCurrency(monthlyInterest)}</p>
+                          <p className="text-[10px] text-faint">Interest/mo</p>
+                          <p className="text-xs font-medium text-muted">{fmtCurrency(monthlyInterest)}</p>
                         </div>
                         {payoffDate && (
                           <div>
-                            <p className="text-[10px] text-[#78756E]">Payoff</p>
-                            <p className="text-xs font-medium text-[#6E6B64]">
+                            <p className="text-[10px] text-faint">Payoff</p>
+                            <p className="text-xs font-medium text-muted">
                               {payoffDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                             </p>
                           </div>
@@ -511,7 +511,7 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
               ) : (
                 <button
                   onClick={() => setShowMortgageModal(true)}
-                  className="w-full py-6 border border-dashed border-[#D8D5CB] rounded-xl text-sm text-[#78756E] hover:text-[#6E6B64] hover:border-[#C6C2B6] transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-6 border border-dashed border-line3 rounded-xl text-sm text-faint hover:text-muted hover:border-line3 transition-colors flex items-center justify-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   Add mortgage details
@@ -524,9 +524,9 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
 
       {/* ── 4. Spending breakdown ─────────────────────────────────────────── */}
       {categoryTotals.length > 0 && (
-        <Card className="bg-white border-[#EAE8E1] text-[#2B2B28]">
+        <Card className="bg-surface border-line text-ink">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-[#57554F] flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-ink2 flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
               Spending breakdown
             </CardTitle>
@@ -535,10 +535,10 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
             {categoryTotals.map(([cat, amount]) => (
               <div key={cat}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-[#6E6B64]">{cat}</span>
-                  <span className="text-xs font-medium text-[#5A6247]">{fmtCurrency(amount)}</span>
+                  <span className="text-xs text-muted">{cat}</span>
+                  <span className="text-xs font-medium text-accentfg">{fmtCurrency(amount)}</span>
                 </div>
-                <div className="w-full h-1.5 bg-[#5A6247]/[0.07] rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-accentfg/[0.07] rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full"
                     style={{
@@ -554,19 +554,19 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
       )}
 
       {/* ── 5. Bills list ─────────────────────────────────────────────────── */}
-      <Card className="bg-white border-[#EAE8E1] text-[#2B2B28]">
+      <Card className="bg-surface border-line text-ink">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-[#57554F] flex items-center gap-2">
+          <CardTitle className="text-sm font-medium text-ink2 flex items-center gap-2">
             <Receipt className="w-4 h-4" />
             Bills this month
             {totalDue > 0 && (
-              <Badge className="bg-[#5A6247]/[0.08] text-[#5A6247] border-0 text-xs px-2">
+              <Badge className="bg-accentfg/[0.08] text-accentfg border-0 text-xs px-2">
                 {fmtCurrency(totalDue)}
               </Badge>
             )}
             <button
               onClick={() => setShowAddBillModal(true)}
-              className="ml-auto flex items-center gap-1 text-xs text-[#5A6247]/70 hover:text-[#5A6247] border border-[#E2DFD6] hover:border-[#CFCBC0] rounded-lg px-2.5 py-1 transition-colors"
+              className="ml-auto flex items-center gap-1 text-xs text-accentfg/70 hover:text-accentfg border border-line2 hover:border-line3 rounded-lg px-2.5 py-1 transition-colors"
             >
               <Plus className="w-3 h-3" />
               Add bill
@@ -576,11 +576,11 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
         <CardContent>
           {sortedBills.length === 0 ? (
             <div className="py-8 text-center">
-              <Receipt className="w-8 h-8 text-[#D8D5CC] mx-auto mb-3" />
-              <p className="text-sm text-[#78756E] mb-3">No bills yet.</p>
+              <Receipt className="w-8 h-8 text-faint2 mx-auto mb-3" />
+              <p className="text-sm text-faint mb-3">No bills yet.</p>
               <button
                 onClick={() => setShowAddBillModal(true)}
-                className="text-xs text-[#5A6247] hover:text-[#2B2B28] border border-[#5A6247]/20 hover:border-[#5A6247]/30 rounded-lg px-3 py-1.5 transition-colors"
+                className="text-xs text-accentfg hover:text-ink border border-accentfg/20 hover:border-accentfg/30 rounded-lg px-3 py-1.5 transition-colors"
               >
                 Add your first bill →
               </button>
@@ -605,7 +605,7 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                             Autopay
                           </Badge>
                         ) : (
-                          <Badge className="bg-black/[0.025] text-[#6E6B64] border-0 text-[10px] px-1.5 py-0 h-4">
+                          <Badge className="bg-tint/[0.025] text-muted border-0 text-[10px] px-1.5 py-0 h-4">
                             Manual
                           </Badge>
                         )}
@@ -616,7 +616,7 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-semibold">{fmtCurrency(bill.amount)}</p>
-                      <p className="text-[10px] text-[#78756E]">{bill.category ?? "Other"}</p>
+                      <p className="text-[10px] text-faint">{bill.category ?? "Other"}</p>
                     </div>
                   </div>
                 );
@@ -627,9 +627,9 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
       </Card>
 
       {/* ── 6. Financial summary (expandable, full-width) ────────────────── */}
-      <Card className="bg-white border-[#EAE8E1] text-[#2B2B28]">
+      <Card className="bg-surface border-line text-ink">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-[#57554F] flex items-center gap-2">
+          <CardTitle className="text-sm font-medium text-ink2 flex items-center gap-2">
             <DollarSign className="w-4 h-4" />
             Financial summary
           </CardTitle>
@@ -637,30 +637,30 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
         <CardContent>
           <div className="space-y-2 mb-3">
             <div className="flex items-center justify-between py-1.5">
-              <span className="text-sm text-[#6E6B64]">Income</span>
+              <span className="text-sm text-muted">Income</span>
               <span className="text-sm font-semibold text-emerald-600">{income > 0 ? `+${fmtCurrency(income)}` : "—"}</span>
             </div>
             {categoryTotals.slice(0, 3).map(([cat, amount]) => (
               <div key={cat} className="flex items-center justify-between py-1.5">
-                <span className="flex items-center gap-2 text-sm text-[#6E6B64]">
+                <span className="flex items-center gap-2 text-sm text-muted">
                   <span className={`w-1.5 h-1.5 rounded-full ${categoryColors[cat] ?? "bg-[#A8A59E]"} shrink-0`} />
                   {cat}
                 </span>
                 <span className="text-sm font-semibold text-red-500">-{fmtCurrency(amount)}</span>
               </div>
             ))}
-            <div className="flex items-center justify-between pt-2 border-t border-[#E2DFD6]">
-              <span className="text-sm font-medium text-[#57554F]">Net cash flow</span>
-              <span className={`text-sm font-bold ${noi > 0 ? "text-emerald-600" : noi < 0 ? "text-red-500" : "text-[#5A6247]"}`}>
+            <div className="flex items-center justify-between pt-2 border-t border-line2">
+              <span className="text-sm font-medium text-ink2">Net cash flow</span>
+              <span className={`text-sm font-bold ${noi > 0 ? "text-emerald-600" : noi < 0 ? "text-red-500" : "text-accentfg"}`}>
                 {income > 0 || totalDue > 0 ? `${noi >= 0 ? "+" : ""}${fmtCurrency(noi)}` : "—"}
               </span>
             </div>
           </div>
 
-          <div className="relative group pt-3 border-t border-[#EAE8E1]">
+          <div className="relative group pt-3 border-t border-line">
             <button
               onClick={() => setShowFullFinancials((v) => !v)}
-              className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.08] border border-[#E2DFD6] hover:border-[#CFCBC0] text-sm font-medium text-[#5A6247] hover:text-[#2B2B28] transition-all"
+              className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-accentfg/[0.06] hover:bg-accentfg/[0.08] border border-line2 hover:border-line3 text-sm font-medium text-accentfg hover:text-ink transition-all"
             >
               <div className="flex items-center gap-2.5">
                 <DollarSign className="w-4 h-4" />
@@ -669,12 +669,12 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
               <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${showFullFinancials ? "rotate-180" : ""}`} />
             </button>
             {!showFullFinancials && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 rounded-xl bg-[#FAF9F6] border border-[#D8D5CB] shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 p-4">
+              <div className="absolute left-0 right-0 top-full mt-1.5 rounded-xl bg-paper border border-line3 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 p-4">
                 <div className="grid grid-cols-3 gap-5">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[#78756E] mb-2">Top expenses</p>
+                    <p className="text-[10px] uppercase tracking-wider text-faint mb-2">Top expenses</p>
                     {categoryTotals.length > 0 && (
-                      <div className="h-2 rounded-full overflow-hidden flex bg-[#5A6247]/[0.08] mb-2">
+                      <div className="h-2 rounded-full overflow-hidden flex bg-accentfg/[0.08] mb-2">
                         {categoryTotals.slice(0, 4).map(([cat, amount]) => (
                           <div
                             key={cat}
@@ -688,33 +688,33 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                       {categoryTotals.slice(0, 3).map(([cat, amount]) => (
                         <div key={cat} className="flex items-center gap-1.5 text-[11px]">
                           <span className={`w-1.5 h-1.5 rounded-full ${categoryColors[cat] ?? "bg-[#A8A59E]"} shrink-0`} />
-                          <span className="text-[#6E6B64] truncate">{cat}</span>
-                          <span className="text-[#78756E] ml-auto shrink-0">{fmtCurrency(amount)}</span>
+                          <span className="text-muted truncate">{cat}</span>
+                          <span className="text-faint ml-auto shrink-0">{fmtCurrency(amount)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[#78756E] mb-2">Mortgage</p>
+                    <p className="text-[10px] uppercase tracking-wider text-faint mb-2">Mortgage</p>
                     {mortPay > 0 && mortOrig > 0 ? (
                       <>
-                        <div className="h-2 rounded-full overflow-hidden bg-[#5A6247]/[0.08] mb-2">
+                        <div className="h-2 rounded-full overflow-hidden bg-accentfg/[0.08] mb-2">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#8A9472]"
+                            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-accentlight"
                             style={{ width: `${Math.round((1 - mortBal / mortOrig) * 100)}%` }}
                           />
                         </div>
-                        <p className="text-[11px] text-[#6E6B64]">
+                        <p className="text-[11px] text-muted">
                           <span className="text-emerald-600 font-medium">{Math.round((1 - mortBal / mortOrig) * 100)}%</span> paid off
                         </p>
-                        <p className="text-[11px] text-[#78756E]">{fmtCurrency(mortBal)} remaining</p>
+                        <p className="text-[11px] text-faint">{fmtCurrency(mortBal)} remaining</p>
                       </>
                     ) : (
-                      <p className="text-[11px] text-[#78756E] italic">Not set up yet</p>
+                      <p className="text-[11px] text-faint italic">Not set up yet</p>
                     )}
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[#78756E] mb-2">Equity</p>
+                    <p className="text-[10px] uppercase tracking-wider text-faint mb-2">Equity</p>
                     {propVal > 0 ? (
                       <div className="flex items-center gap-3">
                         {(() => {
@@ -731,12 +731,12 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                           );
                         })()}
                         <div>
-                          <p className="text-sm font-semibold text-[#5A6247]">{equityPct}%</p>
-                          <p className="text-[11px] text-[#78756E]">{fmtCurrency(equity)}</p>
+                          <p className="text-sm font-semibold text-accentfg">{equityPct}%</p>
+                          <p className="text-[11px] text-faint">{fmtCurrency(equity)}</p>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-[11px] text-[#78756E] italic">Add property value</p>
+                      <p className="text-[11px] text-faint italic">Add property value</p>
                     )}
                   </div>
                 </div>
@@ -745,24 +745,24 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
           </div>
 
           {showFullFinancials && (
-            <div className="pt-4 mt-3 border-t border-[#EAE8E1]">
+            <div className="pt-4 mt-3 border-t border-line">
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 {/* Left: P&L breakdown (3/5 width) */}
                 <div className="lg:col-span-3 space-y-2.5">
-                  <p className="text-[11px] font-medium text-[#6E6B64] uppercase tracking-wider mb-3">Monthly P&amp;L</p>
+                  <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-3">Monthly P&amp;L</p>
                   <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">Income</p>
-                      <p className="text-[11px] text-[#6E6B64]">Monthly revenue</p>
+                      <p className="text-[11px] text-muted">Monthly revenue</p>
                     </div>
                     <p className="text-lg font-semibold text-emerald-600">+{income > 0 ? fmtCurrency(income) : "—"}</p>
                   </div>
                   {categoryTotals.map(([cat, amount]) => (
-                    <div key={cat} className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.015] border border-[#EFEDE7]">
+                    <div key={cat} className="flex items-center gap-3 p-3 rounded-xl bg-tint/[0.015] border border-subtle">
                       <span className={`w-2.5 h-2.5 rounded-full ${categoryColors[cat] ?? "bg-[#A8A59E]"} shrink-0`} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm">{cat}</p>
-                        <div className="mt-1.5 h-1.5 bg-[#5A6247]/[0.08] rounded-full overflow-hidden">
+                        <div className="mt-1.5 h-1.5 bg-accentfg/[0.08] rounded-full overflow-hidden">
                           <div
                             className={`h-full ${categoryColors[cat] ?? "bg-[#A8A59E]"} rounded-full`}
                             style={{ width: `${Math.round((amount / maxCat) * 100)}%` }}
@@ -771,11 +771,11 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-semibold text-red-500">{fmtCurrency(amount)}</p>
-                        <p className="text-[10px] text-[#78756E]">{totalDue > 0 ? `${Math.round((amount / totalDue) * 100)}%` : ""}</p>
+                        <p className="text-[10px] text-faint">{totalDue > 0 ? `${Math.round((amount / totalDue) * 100)}%` : ""}</p>
                       </div>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between pt-3 border-t border-[#EAE8E1]">
+                  <div className="flex items-center justify-between pt-3 border-t border-line">
                     <p className="text-sm font-semibold">Net operating income</p>
                     <p className={`text-xl font-bold tnum ${noi >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                       {income > 0 || totalDue > 0 ? fmtCurrency(noi) : "—"}
@@ -787,39 +787,39 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                 <div className="lg:col-span-2 space-y-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-[11px] font-medium text-[#6E6B64] uppercase tracking-wider">Mortgage</p>
-                      <button onClick={() => setShowMortgageModal(true)} className="p-1 rounded-lg hover:bg-black/[0.04] transition-colors">
-                        <Pencil className="w-3 h-3 text-[#78756E]" />
+                      <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Mortgage</p>
+                      <button onClick={() => setShowMortgageModal(true)} className="p-1 rounded-lg hover:bg-tint/[0.04] transition-colors">
+                        <Pencil className="w-3 h-3 text-faint" />
                       </button>
                     </div>
                     {mortPay > 0 ? (
-                      <div className="space-y-2.5 p-4 rounded-xl bg-black/[0.015] border border-[#EFEDE7]">
+                      <div className="space-y-2.5 p-4 rounded-xl bg-tint/[0.015] border border-subtle">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-[#6E6B64]">Monthly payment</span>
+                          <span className="text-xs text-muted">Monthly payment</span>
                           <span className="text-sm font-semibold">
                             {fmtCurrency(mortPay)}
-                            {mortRate > 0 && <span className="text-[#6E6B64] text-xs ml-1.5">@ {mortRate}%</span>}
+                            {mortRate > 0 && <span className="text-muted text-xs ml-1.5">@ {mortRate}%</span>}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-[#6E6B64]">Current balance</span>
+                          <span className="text-xs text-muted">Current balance</span>
                           <span className="text-sm font-semibold">{fmtCurrency(mortBal)}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-[#6E6B64]">Original loan</span>
+                          <span className="text-xs text-muted">Original loan</span>
                           <span className="text-sm font-semibold">{fmtCurrency(mortOrig)}</span>
                         </div>
                         {mortBal > 0 && mortOrig > 0 && (
                           <>
-                            <div className="flex items-center justify-between pt-2.5 border-t border-[#EAE8E1]">
-                              <span className="text-xs text-[#57554F]">Principal paid</span>
+                            <div className="flex items-center justify-between pt-2.5 border-t border-line">
+                              <span className="text-xs text-ink2">Principal paid</span>
                               <span className="text-sm font-bold text-emerald-600">
                                 {fmtCurrency(mortOrig - mortBal)} ({Math.round((1 - mortBal / mortOrig) * 100)}%)
                               </span>
                             </div>
-                            <div className="h-2.5 bg-[#5A6247]/[0.08] rounded-full overflow-hidden">
+                            <div className="h-2.5 bg-accentfg/[0.08] rounded-full overflow-hidden">
                               <div
-                                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#8A9472]"
+                                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-accentlight"
                                 style={{ width: `${Math.round((1 - mortBal / mortOrig) * 100)}%` }}
                               />
                             </div>
@@ -829,7 +829,7 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                     ) : (
                       <button
                         onClick={() => setShowMortgageModal(true)}
-                        className="w-full py-5 border border-dashed border-[#D8D5CB] rounded-xl text-sm text-[#78756E] hover:text-[#6E6B64] hover:border-[#C6C2B6] transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-5 border border-dashed border-line3 rounded-xl text-sm text-faint hover:text-muted hover:border-line3 transition-colors flex items-center justify-center gap-2"
                       >
                         <Plus className="w-4 h-4" />
                         Add mortgage details
@@ -839,8 +839,8 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
 
                   {propVal > 0 && (
                     <div className="space-y-3">
-                      <p className="text-[11px] font-medium text-[#6E6B64] uppercase tracking-wider">Equity</p>
-                      <div className="flex flex-col items-center p-4 rounded-xl bg-black/[0.015] border border-[#EFEDE7]">
+                      <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Equity</p>
+                      <div className="flex flex-col items-center p-4 rounded-xl bg-tint/[0.015] border border-subtle">
                         {(() => {
                           const eR = 54;
                           const eC = 2 * Math.PI * eR;
@@ -858,18 +858,18 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                                   transform="rotate(-90 70 70)"
                                 />
                               )}
-                              <text x="70" y="66" textAnchor="middle" fill="#5A6247" fontSize="22" fontWeight="bold">{equityPct}%</text>
-                              <text x="70" y="84" textAnchor="middle" fill="rgba(43,43,40,0.45)" fontSize="10">equity</text>
+                              <text x="70" y="66" textAnchor="middle" style={{ fill: "var(--accentfg)" }} fontSize="22" fontWeight="bold">{equityPct}%</text>
+                              <text x="70" y="84" textAnchor="middle" style={{ fill: "var(--faint)" }} fontSize="10">equity</text>
                             </svg>
                           );
                         })()}
-                        <div className="grid grid-cols-2 gap-4 w-full mt-3 pt-3 border-t border-[#EAE8E1]">
+                        <div className="grid grid-cols-2 gap-4 w-full mt-3 pt-3 border-t border-line">
                           <div>
-                            <p className="text-[#6E6B64] text-[11px]">Equity</p>
-                            <p className="text-base font-semibold text-[#5A6247]">{fmtCurrency(equity)}</p>
+                            <p className="text-muted text-[11px]">Equity</p>
+                            <p className="text-base font-semibold text-accentfg">{fmtCurrency(equity)}</p>
                           </div>
                           <div>
-                            <p className="text-[#6E6B64] text-[11px]">Owed</p>
+                            <p className="text-muted text-[11px]">Owed</p>
                             <p className="text-base font-semibold">{mortBal > 0 ? fmtCurrency(mortBal) : "—"}</p>
                           </div>
                         </div>
@@ -888,11 +888,11 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
       {/* Edit property modal */}
       {showPropModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-overlay">
-          <div className="bg-white rounded-2xl border border-[#D8D5CB] animate-modal w-full max-w-md p-6 space-y-4">
+          <div className="bg-surface rounded-2xl border border-line3 animate-modal w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-lg font-bold">Edit Property</h2>
-              <button onClick={() => setShowPropModal(false)} className="p-1 rounded-lg hover:bg-black/[0.04]">
-                <X className="w-4 h-4 text-[#6E6B64]" />
+              <button onClick={() => setShowPropModal(false)} className="p-1 rounded-lg hover:bg-tint/[0.04]">
+                <X className="w-4 h-4 text-muted" />
               </button>
             </div>
             <div className="space-y-3">
@@ -929,8 +929,8 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
               </div>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setShowPropModal(false)} className="flex-1 py-2.5 rounded-xl border border-[#D8D5CB] text-sm text-[#6E6B64] hover:text-[#2B2B28] transition-colors">Cancel</button>
-              <button onClick={savePropEdit} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-[#5A6247] text-sm font-medium text-white hover:bg-[#4A5239] disabled:opacity-50 transition-colors">
+              <button onClick={() => setShowPropModal(false)} className="flex-1 py-2.5 rounded-xl border border-line3 text-sm text-muted hover:text-ink transition-colors">Cancel</button>
+              <button onClick={savePropEdit} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-accent text-sm font-medium text-white hover:bg-accentdark disabled:opacity-50 transition-colors">
                 {saving ? "Saving…" : "Save"}
               </button>
             </div>
@@ -941,11 +941,11 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
       {/* Edit mortgage modal */}
       {showMortgageModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-overlay">
-          <div className="bg-white rounded-2xl border border-[#D8D5CB] animate-modal w-full max-w-md p-6 space-y-4">
+          <div className="bg-surface rounded-2xl border border-line3 animate-modal w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-lg font-bold">Edit Mortgage</h2>
-              <button onClick={() => setShowMortgageModal(false)} className="p-1 rounded-lg hover:bg-black/[0.04]">
-                <X className="w-4 h-4 text-[#6E6B64]" />
+              <button onClick={() => setShowMortgageModal(false)} className="p-1 rounded-lg hover:bg-tint/[0.04]">
+                <X className="w-4 h-4 text-muted" />
               </button>
             </div>
             <div className="space-y-3">
@@ -971,8 +971,8 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
               </div>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setShowMortgageModal(false)} className="flex-1 py-2.5 rounded-xl border border-[#D8D5CB] text-sm text-[#6E6B64] hover:text-[#2B2B28] transition-colors">Cancel</button>
-              <button onClick={saveMortgageEdit} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-[#5A6247] text-sm font-medium text-white hover:bg-[#4A5239] disabled:opacity-50 transition-colors">
+              <button onClick={() => setShowMortgageModal(false)} className="flex-1 py-2.5 rounded-xl border border-line3 text-sm text-muted hover:text-ink transition-colors">Cancel</button>
+              <button onClick={saveMortgageEdit} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-accent text-sm font-medium text-white hover:bg-accentdark disabled:opacity-50 transition-colors">
                 {saving ? "Saving…" : "Save"}
               </button>
             </div>
@@ -983,11 +983,11 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
       {/* Add bill modal */}
       {showAddBillModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-overlay">
-          <div className="bg-white rounded-2xl border border-[#D8D5CB] animate-modal w-full max-w-md p-6 space-y-4">
+          <div className="bg-surface rounded-2xl border border-line3 animate-modal w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-lg font-bold">Add Bill</h2>
-              <button onClick={() => setShowAddBillModal(false)} className="p-1 rounded-lg hover:bg-black/[0.04]">
-                <X className="w-4 h-4 text-[#6E6B64]" />
+              <button onClick={() => setShowAddBillModal(false)} className="p-1 rounded-lg hover:bg-tint/[0.04]">
+                <X className="w-4 h-4 text-muted" />
               </button>
             </div>
             <div className="space-y-3">
@@ -1016,7 +1016,7 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                 <button
                   type="button"
                   onClick={() => setBillForm((f) => ({ ...f, autopay: !f.autopay }))}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-colors ${billForm.autopay ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600" : "bg-black/[0.025] border-[#E2DFD6] text-[#6E6B64]"}`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-colors ${billForm.autopay ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600" : "bg-tint/[0.025] border-line2 text-muted"}`}
                 >
                   <Zap className="w-3.5 h-3.5" />
                   {billForm.autopay ? "On" : "Off"}
@@ -1024,8 +1024,8 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
               </div>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setShowAddBillModal(false)} className="flex-1 py-2.5 rounded-xl border border-[#D8D5CB] text-sm text-[#6E6B64] hover:text-[#2B2B28] transition-colors">Cancel</button>
-              <button onClick={handleAddBill} disabled={saving || !billForm.name} className="flex-1 py-2.5 rounded-xl bg-[#5A6247] text-sm font-medium text-white hover:bg-[#4A5239] disabled:opacity-50 transition-colors">
+              <button onClick={() => setShowAddBillModal(false)} className="flex-1 py-2.5 rounded-xl border border-line3 text-sm text-muted hover:text-ink transition-colors">Cancel</button>
+              <button onClick={handleAddBill} disabled={saving || !billForm.name} className="flex-1 py-2.5 rounded-xl bg-accent text-sm font-medium text-white hover:bg-accentdark disabled:opacity-50 transition-colors">
                 {saving ? "Adding…" : "Add bill"}
               </button>
             </div>
@@ -1103,7 +1103,7 @@ function MockPropertyDetail({ id }: { id: string }) {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 animate-rise stagger">
-      <div className="flex items-center gap-2 text-[10px] text-[#78756E] uppercase tracking-wider">
+      <div className="flex items-center gap-2 text-[10px] text-faint uppercase tracking-wider">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
         Simulated demo data
       </div>
@@ -1118,7 +1118,7 @@ function MockPropertyDetail({ id }: { id: string }) {
           green: "bg-emerald-400", yellow: "bg-amber-400", red: "bg-red-400 animate-pulse",
         }[s]);
         return (
-          <div className={`bg-white rounded-2xl border border-[#EAE8E1] shadow-soft ${hc.border} border-l-4 p-5 sm:p-6`}>
+          <div className={`bg-surface rounded-2xl border border-line shadow-soft ${hc.border} border-l-4 p-5 sm:p-6`}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               {/* Left: score + name */}
               <div className="flex items-start sm:items-center gap-4">
@@ -1126,7 +1126,7 @@ function MockPropertyDetail({ id }: { id: string }) {
                   <span className={`text-xl font-bold tnum ${hc.text}`}>{health.score}</span>
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-wider text-[#6E6B64] mb-0.5">
+                  <p className="text-[11px] uppercase tracking-wider text-muted mb-0.5">
                     {property.location} · {property.type}
                   </p>
                   <h1 className="text-xl sm:text-2xl font-serif font-bold">{property.name}</h1>
@@ -1135,8 +1135,8 @@ function MockPropertyDetail({ id }: { id: string }) {
                       <span className={`w-2 h-2 rounded-full ${hc.dot}`} />
                       {health.label}
                     </span>
-                    <span className="text-[#C4C1B8]">·</span>
-                    <span className="text-[#6E6B64] text-xs">
+                    <span className="text-faint2">·</span>
+                    <span className="text-muted text-xs">
                       {bills.length} bills · {onAutopay} autopay · {fmtCurrency(totalDue)} due
                     </span>
                   </div>
@@ -1147,9 +1147,9 @@ function MockPropertyDetail({ id }: { id: string }) {
                 {(["Compliance", "Utilities", "Finances"] as const).map((label) => {
                   const s = label === "Compliance" ? complianceStatus : label === "Utilities" ? utilityStatus : financialStatus;
                   return (
-                    <div key={label} className="flex items-center gap-1.5 bg-black/[0.025] rounded-lg px-2.5 py-1.5 border border-[#EFEDE7]">
+                    <div key={label} className="flex items-center gap-1.5 bg-tint/[0.025] rounded-lg px-2.5 py-1.5 border border-subtle">
                       <span className={`w-1.5 h-1.5 rounded-full ${domainDot(s)}`} />
-                      <span className="text-xs text-[#6E6B64]">{label}</span>
+                      <span className="text-xs text-muted">{label}</span>
                     </div>
                   );
                 })}
@@ -1160,12 +1160,12 @@ function MockPropertyDetail({ id }: { id: string }) {
       })()}
 
       {needYouActions.length > 0 && (
-        <Card className="bg-white border-[#EAE8E1] text-[#2B2B28]">
+        <Card className="bg-surface border-line text-ink">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-[#57554F] flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-ink2 flex items-center gap-2">
               <Wrench className="w-4 h-4" />
               Needs your attention
-              <Badge className="bg-[#5A6247]/[0.08] text-[#5A6247] border-0 text-xs px-2 ml-auto">
+              <Badge className="bg-accentfg/[0.08] text-accentfg border-0 text-xs px-2 ml-auto">
                 {needYouActions.length}
               </Badge>
             </CardTitle>
@@ -1176,21 +1176,21 @@ function MockPropertyDetail({ id }: { id: string }) {
               return (
                 <div
                   key={action.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border ${ps.border} hover:bg-[#5A6247]/[0.06] transition-colors group`}
+                  className={`flex items-center gap-3 p-3 rounded-xl border ${ps.border} hover:bg-accentfg/[0.06] transition-colors group`}
                 >
                   <Badge className={`${ps.badge} border-0 text-[10px] px-2 py-0.5 uppercase tracking-wide shrink-0`}>
                     {action.priority}
                   </Badge>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium leading-tight">{action.label}</p>
-                    <p className="text-xs text-[#6E6B64] mt-0.5">{action.detail}</p>
+                    <p className="text-xs text-muted mt-0.5">{action.detail}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {action.dueIn && (
-                      <span className="text-[10px] text-[#78756E] hidden sm:inline">{action.dueIn}</span>
+                      <span className="text-[10px] text-faint hidden sm:inline">{action.dueIn}</span>
                     )}
                     {action.ctaLabel && (
-                      <button className="text-[11px] font-medium text-[#5A6247] bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.10] border border-[#5A6247]/20 rounded-lg px-2.5 py-1.5 transition-colors">
+                      <button className="text-[11px] font-medium text-accentfg bg-accentfg/[0.06] hover:bg-accentfg/[0.10] border border-accentfg/20 rounded-lg px-2.5 py-1.5 transition-colors">
                         {action.ctaLabel}
                       </button>
                     )}
@@ -1211,29 +1211,29 @@ function MockPropertyDetail({ id }: { id: string }) {
             { label: "Gas", value: lastMonth.gas, delta: gasDelta, icon: Flame, color: "text-orange-400", bg: "bg-orange-500/10" },
             { label: solarOffset > 0 ? `Total · ${solarOffset}% solar` : "Total utilities", value: totalSpend, delta: totalDelta, icon: solarOffset > 0 ? Sun : DollarSign, color: "text-emerald-600", bg: "bg-emerald-500/10" },
           ] as const).map(({ label, value, delta, icon: Icon, color, bg }) => (
-            <div key={label} className="bg-white border border-[#EAE8E1] rounded-2xl shadow-soft p-4 hover:border-[#5A6247]/15 transition-colors">
+            <div key={label} className="bg-surface border border-line rounded-2xl shadow-soft p-4 hover:border-accentfg/15 transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <div className={`p-2 rounded-lg ${bg}`}>
                   <Icon className={`w-4 h-4 ${color}`} />
                 </div>
-                <span className="flex items-center gap-1 text-xs text-[#6E6B64] bg-black/[0.025] border border-[#EAE8E1] rounded-lg px-2 py-1">
+                <span className="flex items-center gap-1 text-xs text-muted bg-tint/[0.025] border border-line rounded-lg px-2 py-1">
                   {delta > 0 ? <TrendingUp className="w-3 h-3 text-red-500" /> : <TrendingDown className="w-3 h-3 text-emerald-600" />}
                   {Math.abs(delta)}%
                 </span>
               </div>
-              <p className="text-2xl font-bold tnum text-[#5A6247]">${value}</p>
-              <p className="text-[#6E6B64] text-xs mt-1 truncate">{label}</p>
+              <p className="text-2xl font-bold tnum text-accentfg">${value}</p>
+              <p className="text-muted text-xs mt-1 truncate">{label}</p>
             </div>
           ))}
         </div>
       )}
 
-      <Card className="bg-white border-[#EAE8E1] text-[#2B2B28]">
+      <Card className="bg-surface border-line text-ink">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-[#57554F] flex items-center gap-2">
+          <CardTitle className="text-sm font-medium text-ink2 flex items-center gap-2">
             <Receipt className="w-4 h-4" />
             Bills this month
-            <Badge className="bg-[#5A6247]/[0.08] text-[#5A6247] border-0 text-xs px-2 ml-auto">
+            <Badge className="bg-accentfg/[0.08] text-accentfg border-0 text-xs px-2 ml-auto">
               {fmtCurrency(totalDue)}
             </Badge>
           </CardTitle>
@@ -1251,7 +1251,7 @@ function MockPropertyDetail({ id }: { id: string }) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-medium truncate">{bill.name}</p>
                     {bill.isMortgage && (
-                      <Badge className="bg-black/[0.05] text-[#6E6B64] border-0 text-[10px] px-1.5 py-0 h-4">
+                      <Badge className="bg-tint/[0.05] text-muted border-0 text-[10px] px-1.5 py-0 h-4">
                         Mortgage
                       </Badge>
                     )}
@@ -1261,7 +1261,7 @@ function MockPropertyDetail({ id }: { id: string }) {
                         Autopay
                       </Badge>
                     ) : (
-                      <Badge className="bg-black/[0.025] text-[#6E6B64] border-0 text-[10px] px-1.5 py-0 h-4">
+                      <Badge className="bg-tint/[0.025] text-muted border-0 text-[10px] px-1.5 py-0 h-4">
                         Manual
                       </Badge>
                     )}
@@ -1273,10 +1273,10 @@ function MockPropertyDetail({ id }: { id: string }) {
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="text-right">
                     <p className="text-sm font-semibold">{fmtCurrency(bill.amount)}</p>
-                    <p className="text-[10px] text-[#78756E]">{bill.category}</p>
+                    <p className="text-[10px] text-faint">{bill.category}</p>
                   </div>
                   {!bill.autopay && bill.status !== "green" && (
-                    <button className="text-[11px] font-medium text-[#5A6247] bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.10] border border-[#5A6247]/20 rounded-lg px-2.5 py-1.5 transition-colors hidden sm:block">
+                    <button className="text-[11px] font-medium text-accentfg bg-accentfg/[0.06] hover:bg-accentfg/[0.10] border border-accentfg/20 rounded-lg px-2.5 py-1.5 transition-colors hidden sm:block">
                       Pay
                     </button>
                   )}
@@ -1288,9 +1288,9 @@ function MockPropertyDetail({ id }: { id: string }) {
       </Card>
 
       {/* Utility chart — standalone full-width */}
-      <Card className="bg-white border-[#EAE8E1] text-[#2B2B28]">
+      <Card className="bg-surface border-line text-ink">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-[#57554F] flex items-center gap-2">
+          <CardTitle className="text-sm font-medium text-ink2 flex items-center gap-2">
             <Activity className="w-4 h-4" />
             Monthly utility spend
           </CardTitle>
@@ -1318,10 +1318,10 @@ function MockPropertyDetail({ id }: { id: string }) {
                 <YAxis tick={{ fill: "rgba(43,43,40,0.45)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
                 <Tooltip
                   contentStyle={{
-                    background: "#fff",
-                    border: "1px solid #EAE8E1",
+                    background: "var(--surface)",
+                    border: "1px solid var(--line)",
                     borderRadius: 12,
-                    color: "#2B2B28",
+                    color: "var(--ink)",
                     fontSize: 12,
                     boxShadow: "0 12px 28px -16px rgba(43,43,40,0.25)",
                   }}
@@ -1335,7 +1335,7 @@ function MockPropertyDetail({ id }: { id: string }) {
           </div>
           <div className="flex items-center gap-4 mt-2 px-1">
             {[["#A9792F", "Electric"], ["#5E7C88", "Water"], ["#B0654A", "Gas"]].map(([color, label]) => (
-              <span key={label} className="flex items-center gap-1.5 text-[11px] text-[#6E6B64]">
+              <span key={label} className="flex items-center gap-1.5 text-[11px] text-muted">
                 <span className="w-2 h-2 rounded-full" style={{ background: color }} />
                 {label}
               </span>
@@ -1345,9 +1345,9 @@ function MockPropertyDetail({ id }: { id: string }) {
       </Card>
 
       {/* Financial summary — full-width, expandable */}
-      <Card className="bg-white border-[#EAE8E1] text-[#2B2B28]">
+      <Card className="bg-surface border-line text-ink">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-[#57554F] flex items-center gap-2">
+          <CardTitle className="text-sm font-medium text-ink2 flex items-center gap-2">
             <DollarSign className="w-4 h-4" />
             Financial summary
           </CardTitle>
@@ -1355,26 +1355,26 @@ function MockPropertyDetail({ id }: { id: string }) {
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
             <div>
-              <p className="text-[11px] text-[#6E6B64] mb-1">Income</p>
+              <p className="text-[11px] text-muted mb-1">Income</p>
               <p className="text-lg font-bold text-emerald-600">{fmtCurrency(fin.income)}</p>
             </div>
             <div>
-              <p className="text-[11px] text-[#6E6B64] mb-1">Expenses</p>
+              <p className="text-[11px] text-muted mb-1">Expenses</p>
               <p className="text-lg font-bold text-red-500">{fmtCurrency(fin.expenses)}</p>
             </div>
             <div>
-              <p className="text-[11px] text-[#6E6B64] mb-1">NOI</p>
-              <p className={`text-lg font-bold ${fin.noi > 0 ? "text-emerald-600" : fin.noi < 0 ? "text-red-500" : "text-[#5A6247]"}`}>
+              <p className="text-[11px] text-muted mb-1">NOI</p>
+              <p className={`text-lg font-bold ${fin.noi > 0 ? "text-emerald-600" : fin.noi < 0 ? "text-red-500" : "text-accentfg"}`}>
                 {fmtCurrency(fin.noi)}
               </p>
             </div>
             <div>
-              <p className="text-[11px] text-[#6E6B64] mb-1">Occupancy</p>
+              <p className="text-[11px] text-muted mb-1">Occupancy</p>
               <div className="flex items-center gap-2">
-                <p className="text-lg font-bold text-[#5A6247]">{fin.occupancy}%</p>
-                <div className="flex-1 h-2 bg-[#5A6247]/[0.08] rounded-full overflow-hidden max-w-[80px]">
+                <p className="text-lg font-bold text-accentfg">{fin.occupancy}%</p>
+                <div className="flex-1 h-2 bg-accentfg/[0.08] rounded-full overflow-hidden max-w-[80px]">
                   <div
-                    className="h-full bg-gradient-to-r from-[#5A6247] to-emerald-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-accent to-emerald-500 rounded-full"
                     style={{ width: `${fin.occupancy}%` }}
                   />
                 </div>
@@ -1382,10 +1382,10 @@ function MockPropertyDetail({ id }: { id: string }) {
             </div>
           </div>
 
-          <div className="relative group pt-3 border-t border-[#EAE8E1]">
+          <div className="relative group pt-3 border-t border-line">
             <button
               onClick={() => setShowFullFinancials((v) => !v)}
-              className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.08] border border-[#E2DFD6] hover:border-[#CFCBC0] text-sm font-medium text-[#5A6247] hover:text-[#2B2B28] transition-all"
+              className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-accentfg/[0.06] hover:bg-accentfg/[0.08] border border-line2 hover:border-line3 text-sm font-medium text-accentfg hover:text-ink transition-all"
             >
               <div className="flex items-center gap-2.5">
                 <DollarSign className="w-4 h-4" />
@@ -1394,12 +1394,12 @@ function MockPropertyDetail({ id }: { id: string }) {
               <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${showFullFinancials ? "rotate-180" : ""}`} />
             </button>
             {!showFullFinancials && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 rounded-xl bg-[#FAF9F6] border border-[#D8D5CB] shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 p-4">
+              <div className="absolute left-0 right-0 top-full mt-1.5 rounded-xl bg-paper border border-line3 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 p-4">
                 <div className="grid grid-cols-3 gap-5">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[#78756E] mb-2">Top expenses</p>
+                    <p className="text-[10px] uppercase tracking-wider text-faint mb-2">Top expenses</p>
                     {expenses.length > 0 && (
-                      <div className="h-2 rounded-full overflow-hidden flex bg-[#5A6247]/[0.08] mb-2">
+                      <div className="h-2 rounded-full overflow-hidden flex bg-accentfg/[0.08] mb-2">
                         {expenses.slice(0, 4).map((e) => (
                           <div
                             key={e.category}
@@ -1413,27 +1413,27 @@ function MockPropertyDetail({ id }: { id: string }) {
                       {expenses.slice(0, 3).map((e) => (
                         <div key={e.category} className="flex items-center gap-1.5 text-[11px]">
                           <span className={`w-1.5 h-1.5 rounded-full ${categoryColors[e.category] ?? "bg-[#A8A59E]"} shrink-0`} />
-                          <span className="text-[#6E6B64] truncate">{e.category}</span>
-                          <span className="text-[#78756E] ml-auto shrink-0">{fmtCurrency(e.amount)}</span>
+                          <span className="text-muted truncate">{e.category}</span>
+                          <span className="text-faint ml-auto shrink-0">{fmtCurrency(e.amount)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[#78756E] mb-2">Mortgage</p>
-                    <div className="h-2 rounded-full overflow-hidden bg-[#5A6247]/[0.08] mb-2">
+                    <p className="text-[10px] uppercase tracking-wider text-faint mb-2">Mortgage</p>
+                    <div className="h-2 rounded-full overflow-hidden bg-accentfg/[0.08] mb-2">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#8A9472]"
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-accentlight"
                         style={{ width: `${mockPaidPct}%` }}
                       />
                     </div>
-                    <p className="text-[11px] text-[#6E6B64]">
+                    <p className="text-[11px] text-muted">
                       <span className="text-emerald-600 font-medium">{mockPaidPct}%</span> paid off
                     </p>
-                    <p className="text-[11px] text-[#78756E]">{fmtCurrency(property.mortBal)} remaining</p>
+                    <p className="text-[11px] text-faint">{fmtCurrency(property.mortBal)} remaining</p>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[#78756E] mb-2">Equity</p>
+                    <p className="text-[10px] uppercase tracking-wider text-faint mb-2">Equity</p>
                     <div className="flex items-center gap-3">
                       {(() => {
                         const pR = 16; const pC = 2 * Math.PI * pR;
@@ -1447,8 +1447,8 @@ function MockPropertyDetail({ id }: { id: string }) {
                         );
                       })()}
                       <div>
-                        <p className="text-sm font-semibold text-[#5A6247]">{mockEquityPct}%</p>
-                        <p className="text-[11px] text-[#78756E]">{fmtCurrency(mockEquity)}</p>
+                        <p className="text-sm font-semibold text-accentfg">{mockEquityPct}%</p>
+                        <p className="text-[11px] text-faint">{fmtCurrency(mockEquity)}</p>
                       </div>
                     </div>
                   </div>
@@ -1458,24 +1458,24 @@ function MockPropertyDetail({ id }: { id: string }) {
           </div>
 
           {showFullFinancials && (
-            <div className="pt-4 mt-3 border-t border-[#EAE8E1]">
+            <div className="pt-4 mt-3 border-t border-line">
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 {/* Left: P&L breakdown (3/5 width) */}
                 <div className="lg:col-span-3 space-y-2.5">
-                  <p className="text-[11px] font-medium text-[#6E6B64] uppercase tracking-wider mb-3">Monthly P&amp;L</p>
+                  <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-3">Monthly P&amp;L</p>
                   <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">Booking income</p>
-                      <p className="text-[11px] text-[#6E6B64]">{bookings.filter((b) => b.status === "completed").length} stays this period</p>
+                      <p className="text-[11px] text-muted">{bookings.filter((b) => b.status === "completed").length} stays this period</p>
                     </div>
                     <p className="text-lg font-semibold text-emerald-600">+{fmtCurrency(fin.income)}</p>
                   </div>
                   {expenses.map((e) => (
-                    <div key={e.category} className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.015] border border-[#EFEDE7]">
+                    <div key={e.category} className="flex items-center gap-3 p-3 rounded-xl bg-tint/[0.015] border border-subtle">
                       <span className={`w-2.5 h-2.5 rounded-full ${categoryColors[e.category] ?? "bg-[#A8A59E]"} shrink-0`} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm">{e.category}</p>
-                        <div className="mt-1.5 h-1.5 bg-[#5A6247]/[0.08] rounded-full overflow-hidden">
+                        <div className="mt-1.5 h-1.5 bg-accentfg/[0.08] rounded-full overflow-hidden">
                           <div
                             className={`h-full ${categoryColors[e.category] ?? "bg-[#A8A59E]"} rounded-full`}
                             style={{ width: `${Math.round(e.share * 100)}%` }}
@@ -1484,11 +1484,11 @@ function MockPropertyDetail({ id }: { id: string }) {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-semibold text-red-500">{fmtCurrency(e.amount)}</p>
-                        <p className="text-[10px] text-[#78756E]">{Math.round(e.share * 100)}%</p>
+                        <p className="text-[10px] text-faint">{Math.round(e.share * 100)}%</p>
                       </div>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between pt-3 border-t border-[#EAE8E1]">
+                  <div className="flex items-center justify-between pt-3 border-t border-line">
                     <p className="text-sm font-semibold">Net operating income</p>
                     <p className={`text-xl font-bold tnum ${fin.noi >= 0 ? "text-emerald-600" : "text-red-500"}`}>{fmtCurrency(fin.noi)}</p>
                   </div>
@@ -1498,33 +1498,33 @@ function MockPropertyDetail({ id }: { id: string }) {
                 <div className="lg:col-span-2 space-y-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-[11px] font-medium text-[#6E6B64] uppercase tracking-wider">Mortgage</p>
-                      <Badge className="bg-black/[0.025] text-[#6E6B64] border-0 text-[10px] px-1.5">
+                      <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Mortgage</p>
+                      <Badge className="bg-tint/[0.025] text-muted border-0 text-[10px] px-1.5">
                         {property.mortRate}% APR
                       </Badge>
                     </div>
-                    <div className="space-y-2.5 p-4 rounded-xl bg-black/[0.015] border border-[#EFEDE7]">
+                    <div className="space-y-2.5 p-4 rounded-xl bg-tint/[0.015] border border-subtle">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-[#6E6B64]">Monthly payment</span>
+                        <span className="text-xs text-muted">Monthly payment</span>
                         <span className="text-sm font-semibold">{fmtCurrency(property.mortPay)}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-[#6E6B64]">Current balance</span>
+                        <span className="text-xs text-muted">Current balance</span>
                         <span className="text-sm font-semibold">{fmtCurrency(property.mortBal)}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-[#6E6B64]">Original loan</span>
+                        <span className="text-xs text-muted">Original loan</span>
                         <span className="text-sm font-semibold">{fmtCurrency(property.mortOrig)}</span>
                       </div>
-                      <div className="flex items-center justify-between pt-2.5 border-t border-[#EAE8E1]">
-                        <span className="text-xs text-[#57554F]">Principal paid</span>
+                      <div className="flex items-center justify-between pt-2.5 border-t border-line">
+                        <span className="text-xs text-ink2">Principal paid</span>
                         <span className="text-sm font-bold text-emerald-600">
                           {fmtCurrency(mockPaidPrincipal)} ({mockPaidPct}%)
                         </span>
                       </div>
-                      <div className="h-2.5 bg-[#5A6247]/[0.08] rounded-full overflow-hidden">
+                      <div className="h-2.5 bg-accentfg/[0.08] rounded-full overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#8A9472]"
+                          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-accentlight"
                           style={{ width: `${mockPaidPct}%` }}
                         />
                       </div>
@@ -1532,8 +1532,8 @@ function MockPropertyDetail({ id }: { id: string }) {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-[11px] font-medium text-[#6E6B64] uppercase tracking-wider">Equity</p>
-                    <div className="flex flex-col items-center p-4 rounded-xl bg-black/[0.015] border border-[#EFEDE7]">
+                    <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Equity</p>
+                    <div className="flex flex-col items-center p-4 rounded-xl bg-tint/[0.015] border border-subtle">
                       {(() => {
                         const eR = 54;
                         const eC = 2 * Math.PI * eR;
@@ -1549,18 +1549,18 @@ function MockPropertyDetail({ id }: { id: string }) {
                               strokeLinecap="round"
                               transform="rotate(-90 70 70)"
                             />
-                            <text x="70" y="66" textAnchor="middle" fill="#5A6247" fontSize="22" fontWeight="bold">{mockEquityPct}%</text>
-                            <text x="70" y="84" textAnchor="middle" fill="rgba(43,43,40,0.45)" fontSize="10">equity</text>
+                            <text x="70" y="66" textAnchor="middle" style={{ fill: "var(--accentfg)" }} fontSize="22" fontWeight="bold">{mockEquityPct}%</text>
+                            <text x="70" y="84" textAnchor="middle" style={{ fill: "var(--faint)" }} fontSize="10">equity</text>
                           </svg>
                         );
                       })()}
-                      <div className="grid grid-cols-2 gap-4 w-full mt-3 pt-3 border-t border-[#EAE8E1]">
+                      <div className="grid grid-cols-2 gap-4 w-full mt-3 pt-3 border-t border-line">
                         <div>
-                          <p className="text-[#6E6B64] text-[11px]">Equity</p>
-                          <p className="text-base font-semibold text-[#5A6247]">{fmtCurrency(mockEquity)}</p>
+                          <p className="text-muted text-[11px]">Equity</p>
+                          <p className="text-base font-semibold text-accentfg">{fmtCurrency(mockEquity)}</p>
                         </div>
                         <div>
-                          <p className="text-[#6E6B64] text-[11px]">Owed</p>
+                          <p className="text-muted text-[11px]">Owed</p>
                           <p className="text-base font-semibold">{fmtCurrency(property.mortBal)}</p>
                         </div>
                       </div>
@@ -1573,7 +1573,7 @@ function MockPropertyDetail({ id }: { id: string }) {
         </CardContent>
       </Card>
 
-      <p className="text-[#78756E] text-xs italic pt-4">All numbers are simulated for design review.</p>
+      <p className="text-faint text-xs italic pt-4">All numbers are simulated for design review.</p>
     </main>
   );
 }
@@ -1609,45 +1609,45 @@ export default function PropertyDetailPage({
     : getProperty(id)?.name ?? "Property";
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-[#2B2B28]">
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#E2DFD6]">
+    <div className="min-h-screen bg-paper text-ink">
+      <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-xl border-b border-line2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-2 text-[#6E6B64] hover:text-[#2B2B28] text-sm">
+            <Link href="/dashboard" className="flex items-center gap-2 text-muted hover:text-ink text-sm">
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Portfolio</span>
             </Link>
-            <div className="h-5 w-px bg-[#5A6247]/[0.08]" />
+            <div className="h-5 w-px bg-accentfg/[0.08]" />
             <div className="relative">
               <button
                 onClick={() => allProperties.length > 1 && setShowPropertyDropdown((v) => !v)}
                 className="flex items-center gap-2 min-w-0"
               >
-                <div className="w-7 h-7 rounded-lg bg-[#5A6247] flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center shrink-0">
                   <HomeIcon className="w-4 h-4 text-white" />
                 </div>
                 <span className="font-serif text-base sm:text-lg font-bold tracking-tight truncate">
                   {propertyName}
                 </span>
                 {allProperties.length > 1 && (
-                  <ChevronDown className={`w-4 h-4 text-[#6E6B64] shrink-0 transition-transform ${showPropertyDropdown ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`w-4 h-4 text-muted shrink-0 transition-transform ${showPropertyDropdown ? "rotate-180" : ""}`} />
                 )}
               </button>
               {showPropertyDropdown && allProperties.length > 1 && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-[#D8D5CB] rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="absolute top-full left-0 mt-2 w-64 bg-surface border border-line3 rounded-xl shadow-xl z-50 overflow-hidden">
                   {allProperties.map((p) => (
                     <Link
                       key={p.id}
                       href={`/dashboard/${p.id}`}
                       onClick={() => setShowPropertyDropdown(false)}
-                      className={`flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#5A6247]/[0.08] transition-colors ${
-                        p.id === id ? "bg-[#5A6247]/[0.06] text-[#5A6247]" : "text-[#57554F]"
+                      className={`flex items-center gap-3 px-4 py-3 text-sm hover:bg-accentfg/[0.08] transition-colors ${
+                        p.id === id ? "bg-accentfg/[0.06] text-accentfg" : "text-ink2"
                       }`}
                     >
                       <HomeIcon className="w-4 h-4 shrink-0" />
                       <div className="min-w-0">
                         <p className="font-medium truncate">{p.name ?? "Untitled"}</p>
-                        <p className="text-[11px] text-[#6E6B64] truncate">{p.location ?? p.address ?? ""}</p>
+                        <p className="text-[11px] text-muted truncate">{p.location ?? p.address ?? ""}</p>
                       </div>
                       {p.id === id && <span className="ml-auto text-emerald-600 text-xs">Current</span>}
                     </Link>
@@ -1659,20 +1659,20 @@ export default function PropertyDetailPage({
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard/inbox"
-              className="text-xs text-[#6E6B64] hover:text-[#2B2B28] px-3 py-1.5 rounded-lg border border-[#5A6247]/15 hidden sm:flex items-center gap-2"
+              className="text-xs text-muted hover:text-ink px-3 py-1.5 rounded-lg border border-accentfg/15 hidden sm:flex items-center gap-2"
             >
               <Inbox className="w-3.5 h-3.5" />
               Inbox
             </Link>
-            <button className="relative p-2 rounded-xl hover:bg-[#5A6247]/[0.08] transition-colors">
-              <Bell className="w-5 h-5 text-[#6E6B64]" />
+            <button className="relative p-2 rounded-xl hover:bg-accentfg/[0.08] transition-colors">
+              <Bell className="w-5 h-5 text-muted" />
             </button>
           </div>
         </div>
       </header>
 
       {loading && (
-        <div className="flex items-center justify-center py-24 text-[#78756E]">
+        <div className="flex items-center justify-center py-24 text-faint">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           Loading property…
         </div>

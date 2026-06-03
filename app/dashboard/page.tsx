@@ -117,16 +117,16 @@ function SortablePropertyCard({ p }: { p: DbPropertyWithBills }) {
       <div
         {...listeners}
         {...attributes}
-        className="absolute top-2.5 left-3 p-1.5 cursor-grab active:cursor-grabbing touch-none z-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-black/[0.04]"
+        className="absolute top-2.5 left-3 p-1.5 cursor-grab active:cursor-grabbing touch-none z-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-tint/[0.04]"
         style={{ WebkitTapHighlightColor: "transparent" }}
         onClick={(e) => e.preventDefault()}
       >
-        <GripVertical className="w-3.5 h-3.5 text-[#6E6B64]" />
+        <GripVertical className="w-3.5 h-3.5 text-muted" />
       </div>
 
       <Link
         href={`/dashboard/${p.id}`}
-        className={`block h-full bg-white rounded-2xl border border-[#EAE8E1] shadow-soft hover:border-[#5A6247]/25 transition-all border-l-4 ${
+        className={`block h-full bg-surface rounded-2xl border border-line shadow-soft hover:border-accentfg/25 transition-all border-l-4 ${
           health.overall === "green"
             ? "border-l-emerald-400"
             : health.overall === "yellow"
@@ -144,17 +144,17 @@ function SortablePropertyCard({ p }: { p: DbPropertyWithBills }) {
                 <h2 className="text-lg font-serif font-bold truncate">
                   {p.name ?? "Untitled property"}
                 </h2>
-                <p className="text-[#6E6B64] text-xs mt-0.5">
+                <p className="text-muted text-xs mt-0.5">
                   {p.location ?? p.address ?? "—"} · {p.type ?? "Property"}
                 </p>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-[#78756E] group-hover:text-[#5A6247] transition-colors shrink-0" />
+            <ChevronRight className="w-5 h-5 text-faint group-hover:text-accentfg transition-colors shrink-0" />
           </div>
 
-          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#EAE8E1]">
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-line">
             <div>
-              <p className="text-[#6E6B64] text-[11px] mb-1 flex items-center gap-1">
+              <p className="text-muted text-[11px] mb-1 flex items-center gap-1">
                 <Receipt className="w-3 h-3" />
                 Bills
               </p>
@@ -163,26 +163,26 @@ function SortablePropertyCard({ p }: { p: DbPropertyWithBills }) {
               </p>
             </div>
             <div>
-              <p className="text-[#6E6B64] text-[11px] mb-1 flex items-center gap-1">
+              <p className="text-muted text-[11px] mb-1 flex items-center gap-1">
                 <Zap className="w-3 h-3" />
                 Autopay
               </p>
               <p className="text-sm font-semibold text-emerald-600">
                 {propAutopay}
-                <span className="text-[#78756E] font-normal">/{bills.length}</span>
+                <span className="text-faint font-normal">/{bills.length}</span>
               </p>
             </div>
             <div>
-              <p className="text-[#6E6B64] text-[11px] mb-1">Net this mo.</p>
-              <p className="text-sm font-semibold text-[#2B2B28]">
+              <p className="text-muted text-[11px] mb-1">Net this mo.</p>
+              <p className="text-sm font-semibold text-ink">
                 {noi !== 0 ? fmtCurrency(noi) : "—"}
               </p>
             </div>
           </div>
 
           {bills.length === 0 && (
-            <div className="mt-4 flex items-center gap-2 rounded-xl px-3 py-2 border border-[#EFEDE7] bg-black/[0.015]">
-              <p className="text-xs text-[#78756E]">No bills added yet</p>
+            <div className="mt-4 flex items-center gap-2 rounded-xl px-3 py-2 border border-subtle bg-tint/[0.015]">
+              <p className="text-xs text-faint">No bills added yet</p>
             </div>
           )}
 
@@ -372,12 +372,12 @@ export default function PortfolioPage() {
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-[#2B2B28]">
+    <div className="min-h-screen bg-paper text-ink">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#E2DFD6]">
+      <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-xl border-b border-line2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#5A6247] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
               <HomeIcon className="w-4 h-4 text-white" />
             </div>
             <span className="font-serif text-lg font-bold tracking-tight">HomeOS</span>
@@ -386,18 +386,18 @@ export default function PortfolioPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard/inbox"
-              className="flex items-center gap-2 text-[#6E6B64] hover:text-[#2B2B28] text-sm bg-black/[0.025] border border-[#EAE8E1] rounded-xl px-3 py-2 transition-colors"
+              className="flex items-center gap-2 text-muted hover:text-ink text-sm bg-tint/[0.025] border border-line rounded-xl px-3 py-2 transition-colors"
             >
               <Inbox className="w-4 h-4" />
               <span className="hidden sm:inline">Inbox</span>
               {totalUrgent + totalSoon > 0 && (
-                <Badge className="bg-[#5A6247]/[0.08] text-[#5A6247] border-0 text-[10px] px-1.5 h-4">
+                <Badge className="bg-accentfg/[0.08] text-accentfg border-0 text-[10px] px-1.5 h-4">
                   {totalUrgent + totalSoon}
                 </Badge>
               )}
             </Link>
-            <button className="relative p-2 rounded-xl hover:bg-[#5A6247]/[0.08] transition-colors">
-              <Bell className="w-5 h-5 text-[#6E6B64]" />
+            <button className="relative p-2 rounded-xl hover:bg-accentfg/[0.08] transition-colors">
+              <Bell className="w-5 h-5 text-muted" />
               {totalUrgent > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-400 rounded-full" />
               )}
@@ -405,7 +405,7 @@ export default function PortfolioPage() {
             <button
               onClick={handleSignOut}
               disabled={signingOut}
-              className="text-xs text-[#6E6B64] hover:text-[#2B2B28] transition-colors px-3 py-1.5 rounded-lg border border-[#5A6247]/15"
+              className="text-xs text-muted hover:text-ink transition-colors px-3 py-1.5 rounded-lg border border-accentfg/15"
             >
               Sign out
             </button>
@@ -416,54 +416,54 @@ export default function PortfolioPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 animate-rise stagger">
         {/* Demo data banner (only when showing mock) */}
         {!loadingData && !useReal && (
-          <div className="flex items-center gap-2 text-[10px] text-[#78756E] uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-[10px] text-faint uppercase tracking-wider">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
             Simulated demo data
           </div>
         )}
 
         {/* Hero */}
-        <div className="bg-white border border-[#EAE8E1] rounded-2xl shadow-soft p-6 sm:p-8">
-          <p className="text-[11px] uppercase tracking-wider text-[#6E6B64] mb-3">
+        <div className="bg-surface border border-line rounded-2xl shadow-soft p-6 sm:p-8">
+          <p className="text-[11px] uppercase tracking-wider text-muted mb-3">
             Every bill, every property, one place
           </p>
           {loadingData ? (
-            <div className="flex items-center gap-2 text-[#78756E]">
+            <div className="flex items-center gap-2 text-faint">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">Loading your properties…</span>
             </div>
           ) : (
             <h1 className="text-2xl sm:text-3xl font-serif font-bold leading-tight">
-              <span className="text-[#2B2B28]">{totalBills} bills</span>
-              <span className="text-[#6E6B64]"> across </span>
-              <span className="text-[#2B2B28]">
+              <span className="text-ink">{totalBills} bills</span>
+              <span className="text-muted"> across </span>
+              <span className="text-ink">
                 {useReal ? dbProperties.length : mockProperties.length} properties
               </span>
-              <span className="text-[#6E6B64]"> · </span>
+              <span className="text-muted"> · </span>
               <span className="text-emerald-600">{onAutopay} on autopay</span>
               {needAttention > 0 && (
                 <>
-                  <span className="text-[#6E6B64]"> · </span>
+                  <span className="text-muted"> · </span>
                   <span className="text-amber-600">{needAttention} need attention</span>
                 </>
               )}
             </h1>
           )}
-          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-[#EAE8E1]">
+          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-line">
             <div>
-              <p className="text-[#6E6B64] text-[11px] uppercase tracking-wider">Bills due this month</p>
-              <p className="text-2xl font-bold tnum text-[#5A6247] mt-1">{fmtCurrency(totalDue)}</p>
+              <p className="text-muted text-[11px] uppercase tracking-wider">Bills due this month</p>
+              <p className="text-2xl font-bold tnum text-accentfg mt-1">{fmtCurrency(totalDue)}</p>
             </div>
             <div>
-              <p className="text-[#6E6B64] text-[11px] uppercase tracking-wider">On autopay</p>
+              <p className="text-muted text-[11px] uppercase tracking-wider">On autopay</p>
               <p className="text-2xl font-bold tnum text-emerald-600 mt-1">
                 {onAutopay}
-                <span className="text-[#78756E] text-base font-normal">/{totalBills}</span>
+                <span className="text-faint text-base font-normal">/{totalBills}</span>
               </p>
             </div>
             <div>
-              <p className="text-[#6E6B64] text-[11px] uppercase tracking-wider">Needs you</p>
-              <p className="text-2xl font-bold tnum text-[#2B2B28] mt-1">{totalUrgent + totalSoon}</p>
+              <p className="text-muted text-[11px] uppercase tracking-wider">Needs you</p>
+              <p className="text-2xl font-bold tnum text-ink mt-1">{totalUrgent + totalSoon}</p>
             </div>
           </div>
         </div>
@@ -472,23 +472,23 @@ export default function PortfolioPage() {
         {!useReal && totalUrgent + totalSoon > 0 && (
           <Link
             href="/dashboard/inbox"
-            className="block bg-white border border-[#EAE8E1] hover:border-[#5A6247]/25 rounded-2xl p-5 transition-colors group"
+            className="block bg-surface border border-line hover:border-accentfg/25 rounded-2xl p-5 transition-colors group"
           >
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-lg bg-[#5A6247]/[0.08] shrink-0">
-                  <Inbox className="w-4 h-4 text-[#5A6247]" />
+                <div className="p-2 rounded-lg bg-accentfg/[0.08] shrink-0">
+                  <Inbox className="w-4 h-4 text-accentfg" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium">
                     {totalUrgent > 0 && <span className="text-red-500">{totalUrgent} urgent</span>}
-                    {totalUrgent > 0 && totalSoon > 0 && <span className="text-[#78756E]"> · </span>}
+                    {totalUrgent > 0 && totalSoon > 0 && <span className="text-faint"> · </span>}
                     {totalSoon > 0 && <span className="text-amber-600">{totalSoon} due soon</span>}
                   </p>
-                  <p className="text-[11px] text-[#6E6B64] mt-0.5">Open inbox to handle them</p>
+                  <p className="text-[11px] text-muted mt-0.5">Open inbox to handle them</p>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-[#78756E] group-hover:text-[#5A6247] transition-all" />
+              <ChevronRight className="w-5 h-5 text-faint group-hover:text-accentfg transition-all" />
             </div>
           </Link>
         )}
@@ -496,14 +496,14 @@ export default function PortfolioPage() {
         {/* Properties header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-medium text-[#57554F]">Properties</h2>
+            <h2 className="text-sm font-medium text-ink2">Properties</h2>
             {useReal && dbProperties.length > 1 && (
-              <span className="text-[10px] text-[#B5B2A9] italic">drag to reorder</span>
+              <span className="text-[10px] text-faint2 italic">drag to reorder</span>
             )}
           </div>
           <button
             onClick={() => { setShowAddModal(true); setSaveError(""); }}
-            className="flex items-center gap-1.5 text-xs text-[#5A6247] bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.10] border border-[#5A6247]/20 rounded-xl px-3 py-1.5 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-accentfg bg-accentfg/[0.06] hover:bg-accentfg/[0.10] border border-accentfg/20 rounded-xl px-3 py-1.5 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add property
@@ -547,7 +547,7 @@ export default function PortfolioPage() {
                   <Link
                     key={p.id}
                     href={`/dashboard/${p.id}`}
-                    className={`group block h-full bg-white rounded-2xl border border-[#EAE8E1] shadow-soft hover:border-[#5A6247]/25 transition-all border-l-4 ${
+                    className={`group block h-full bg-surface rounded-2xl border border-line shadow-soft hover:border-accentfg/25 transition-all border-l-4 ${
                       health.overall === "green"
                         ? "border-l-emerald-400"
                         : health.overall === "yellow"
@@ -563,33 +563,33 @@ export default function PortfolioPage() {
                           </div>
                           <div className="min-w-0">
                             <h2 className="text-lg font-serif font-bold truncate">{p.name}</h2>
-                            <p className="text-[#6E6B64] text-xs mt-0.5">
+                            <p className="text-muted text-xs mt-0.5">
                               {p.location} · {p.type}
                             </p>
                           </div>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-[#78756E] group-hover:text-[#5A6247] transition-colors shrink-0" />
+                        <ChevronRight className="w-5 h-5 text-faint group-hover:text-accentfg transition-colors shrink-0" />
                       </div>
 
-                      <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#EAE8E1]">
+                      <div className="grid grid-cols-3 gap-3 pt-4 border-t border-line">
                         <div>
-                          <p className="text-[#6E6B64] text-[11px] mb-1 flex items-center gap-1">
+                          <p className="text-muted text-[11px] mb-1 flex items-center gap-1">
                             <Receipt className="w-3 h-3" />Bills
                           </p>
                           <p className="text-sm font-semibold">{bills.length}</p>
                         </div>
                         <div>
-                          <p className="text-[#6E6B64] text-[11px] mb-1 flex items-center gap-1">
+                          <p className="text-muted text-[11px] mb-1 flex items-center gap-1">
                             <Zap className="w-3 h-3" />Autopay
                           </p>
                           <p className="text-sm font-semibold text-emerald-600">
                             {propAutopay}
-                            <span className="text-[#78756E] font-normal">/{bills.length}</span>
+                            <span className="text-faint font-normal">/{bills.length}</span>
                           </p>
                         </div>
                         <div>
-                          <p className="text-[#6E6B64] text-[11px] mb-1">Net this mo.</p>
-                          <p className="text-sm font-semibold text-[#2B2B28]">{fmtCurrency(fin.noi)}</p>
+                          <p className="text-muted text-[11px] mb-1">Net this mo.</p>
+                          <p className="text-sm font-semibold text-ink">{fmtCurrency(fin.noi)}</p>
                         </div>
                       </div>
 
@@ -619,13 +619,13 @@ export default function PortfolioPage() {
               })}
             </div>
 
-            <p className="text-[#78756E] text-xs italic pt-2">
+            <p className="text-faint text-xs italic pt-2">
               Add your first real property above to replace demo data.
             </p>
           </>
         )}
         <div className="pt-8 pb-2 flex justify-center">
-          <Link href="/legacy/dashboard" className="text-[10px] text-[#CFCCC3] hover:text-[#78756E] transition-colors">
+          <Link href="/legacy/dashboard" className="text-[10px] text-faint2 hover:text-faint transition-colors">
             Legacy dashboard
           </Link>
         </div>
@@ -634,34 +634,34 @@ export default function PortfolioPage() {
       {/* ── Add Property Modal ─────────────────────────────────────────────── */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-overlay">
-          <div className="w-full max-w-lg bg-white rounded-2xl border border-[#D8D5CB] animate-modal shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-[#E2DFD6]">
+          <div className="w-full max-w-lg bg-surface rounded-2xl border border-line3 animate-modal shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-line2">
               <h3 className="font-serif text-lg font-bold">Add property</h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="p-1.5 rounded-lg hover:bg-black/[0.04] transition-colors"
+                className="p-1.5 rounded-lg hover:bg-tint/[0.04] transition-colors"
               >
-                <X className="w-4 h-4 text-[#6E6B64]" />
+                <X className="w-4 h-4 text-muted" />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
               {/* Name */}
               <div>
-                <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
+                <label className="block text-[11px] uppercase tracking-wider text-muted mb-1.5">
                   Property name *
                 </label>
                 <input
                   value={form.name}
                   onChange={(e) => setField("name", e.target.value)}
                   placeholder="Desert Ridge Villa"
-                  className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
+                  className="w-full bg-paper border border-line3 rounded-xl px-3 py-2.5 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
                 />
               </div>
 
               {/* Address + Lookup */}
               <div>
-                <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
+                <label className="block text-[11px] uppercase tracking-wider text-muted mb-1.5">
                   Address *
                 </label>
                 <div className="flex gap-2">
@@ -669,12 +669,12 @@ export default function PortfolioPage() {
                     value={form.address}
                     onChange={(e) => setField("address", e.target.value)}
                     placeholder="5421 E Desert Ridge Dr, Phoenix, AZ"
-                    className="flex-1 bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
+                    className="flex-1 bg-paper border border-line3 rounded-xl px-3 py-2.5 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
                   />
                   <button
                     onClick={handleLookup}
                     disabled={lookingUp || !form.address.trim()}
-                    className="flex items-center gap-1.5 px-3 py-2.5 text-xs text-[#5A6247] bg-[#5A6247]/[0.06] hover:bg-[#5A6247]/[0.10] border border-[#5A6247]/20 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-2.5 text-xs text-accentfg bg-accentfg/[0.06] hover:bg-accentfg/[0.10] border border-accentfg/20 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                   >
                     {lookingUp ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -687,7 +687,7 @@ export default function PortfolioPage() {
                 {lookupError && (
                   <p className="text-xs text-red-500 mt-1">{lookupError}</p>
                 )}
-                <p className="text-[10px] text-[#B5B2A9] mt-1">
+                <p className="text-[10px] text-faint2 mt-1">
                   Fetches estimated value from Rentcast (requires RENTCAST_API_KEY)
                 </p>
               </div>
@@ -695,24 +695,24 @@ export default function PortfolioPage() {
               {/* Location + Type */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-wider text-muted mb-1.5">
                     Location
                   </label>
                   <input
                     value={form.location}
                     onChange={(e) => setField("location", e.target.value)}
                     placeholder="Phoenix, AZ"
-                    className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
+                    className="w-full bg-paper border border-line3 rounded-xl px-3 py-2.5 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-wider text-muted mb-1.5">
                     Type
                   </label>
                   <select
                     value={form.type}
                     onChange={(e) => setField("type", e.target.value)}
-                    className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] focus:outline-none focus:border-[#5A6247]/30"
+                    className="w-full bg-paper border border-line3 rounded-xl px-3 py-2.5 text-sm text-ink focus:outline-none focus:border-accentfg/30"
                   >
                     <option value="STR">STR</option>
                     <option value="Primary">Primary</option>
@@ -723,7 +723,7 @@ export default function PortfolioPage() {
               {/* Estimated value + Monthly income */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-wider text-muted mb-1.5">
                     Est. value ($)
                   </label>
                   <input
@@ -731,11 +731,11 @@ export default function PortfolioPage() {
                     onChange={(e) => setField("propVal", e.target.value)}
                     placeholder="685000"
                     type="number"
-                    className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
+                    className="w-full bg-paper border border-line3 rounded-xl px-3 py-2.5 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#6E6B64] mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-wider text-muted mb-1.5">
                     Monthly income ($)
                   </label>
                   <input
@@ -743,56 +743,56 @@ export default function PortfolioPage() {
                     onChange={(e) => setField("income", e.target.value)}
                     placeholder="4850"
                     type="number"
-                    className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2.5 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
+                    className="w-full bg-paper border border-line3 rounded-xl px-3 py-2.5 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
                   />
                 </div>
               </div>
 
               {/* Mortgage section */}
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-[#6E6B64] mb-2">
+                <p className="text-[11px] uppercase tracking-wider text-muted mb-2">
                   Mortgage (optional)
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] text-[#78756E] mb-1">Balance ($)</label>
+                    <label className="block text-[10px] text-faint mb-1">Balance ($)</label>
                     <input
                       value={form.mortBal}
                       onChange={(e) => setField("mortBal", e.target.value)}
                       placeholder="412000"
                       type="number"
-                      className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
+                      className="w-full bg-paper border border-line3 rounded-xl px-3 py-2 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-[#78756E] mb-1">Original ($)</label>
+                    <label className="block text-[10px] text-faint mb-1">Original ($)</label>
                     <input
                       value={form.mortOrig}
                       onChange={(e) => setField("mortOrig", e.target.value)}
                       placeholder="540000"
                       type="number"
-                      className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
+                      className="w-full bg-paper border border-line3 rounded-xl px-3 py-2 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-[#78756E] mb-1">Monthly payment ($)</label>
+                    <label className="block text-[10px] text-faint mb-1">Monthly payment ($)</label>
                     <input
                       value={form.mortPay}
                       onChange={(e) => setField("mortPay", e.target.value)}
                       placeholder="2850"
                       type="number"
-                      className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
+                      className="w-full bg-paper border border-line3 rounded-xl px-3 py-2 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-[#78756E] mb-1">Rate (%)</label>
+                    <label className="block text-[10px] text-faint mb-1">Rate (%)</label>
                     <input
                       value={form.mortRate}
                       onChange={(e) => setField("mortRate", e.target.value)}
                       placeholder="7.1"
                       type="number"
                       step="0.01"
-                      className="w-full bg-[#FAF9F6] border border-[#D8D5CB] rounded-xl px-3 py-2 text-sm text-[#2B2B28] placeholder-[#B5B2A9] focus:outline-none focus:border-[#5A6247]/30"
+                      className="w-full bg-paper border border-line3 rounded-xl px-3 py-2 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
                     />
                   </div>
                 </div>
@@ -805,14 +805,14 @@ export default function PortfolioPage() {
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-2.5 text-sm text-[#6E6B64] hover:text-[#2B2B28] border border-[#E2DFD6] rounded-xl transition-colors"
+                  className="flex-1 py-2.5 text-sm text-muted hover:text-ink border border-line2 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveProperty}
                   disabled={saving}
-                  className="flex-1 py-2.5 text-sm font-medium text-white bg-[#5A6247] hover:bg-[#4A5239] rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 text-sm font-medium text-white bg-accent hover:bg-accentdark rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Save property

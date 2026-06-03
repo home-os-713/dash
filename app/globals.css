@@ -28,7 +28,94 @@
   --color-red-400: #C2675A;
   --color-red-500: #A8463B;
   --color-red-600: #97362D;
+
+  /* ── Semantic surface / text / line / accent tokens ────────────────────────
+     Backed by CSS variables defined in :root (light) and .dark below, so a single
+     `.dark` class on <html> reskins the whole app. Light values are identical to
+     the original hardcoded hexes, so light mode is unchanged. */
+  --color-paper: var(--paper);       /* page background */
+  --color-surface: var(--surface);   /* cards / panels */
+  --color-ink: var(--ink);           /* primary text */
+  --color-ink2: var(--ink2);         /* secondary text */
+  --color-muted: var(--muted);       /* muted text */
+  --color-faint: var(--faint);       /* faint-but-legible text */
+  --color-faint2: var(--faint2);     /* decorative / placeholder text */
+  --color-line: var(--line);         /* hairline borders */
+  --color-line2: var(--line2);       /* slightly stronger border */
+  --color-line3: var(--line3);       /* input borders */
+  --color-subtle: var(--subtle);     /* subtle fills / faint borders */
+  --color-accent: var(--accent);     /* olive — solid fills/buttons (white text) */
+  --color-accentdark: var(--accentdark); /* olive hover */
+  --color-accentfg: var(--accentfg); /* olive — text / icons / borders / tints */
+  --color-accentlight: var(--accentlight); /* gradient end */
+  --color-tint: var(--tint);         /* neutral overlay (black in light, white in dark) */
 }
+
+/* ── Light theme (default) — values == the original hardcoded palette ──────── */
+:root {
+  --paper: #FAF9F6;
+  --surface: #FFFFFF;
+  --ink: #2B2B28;
+  --ink2: #57554F;
+  --muted: #6E6B64;
+  --faint: #78756E;
+  --faint2: #8A8780;
+  --line: #EAE8E1;
+  --line2: #E2DFD6;
+  --line3: #D8D5CB;
+  --subtle: #EFEDE7;
+  --accent: #5A6247;
+  --accentdark: #4A5239;
+  --accentfg: #5A6247;
+  --accentlight: #8A9472;
+  --tint: #000000;
+  --chart-grid: rgba(43, 43, 40, 0.06);
+  --chart-axis: rgba(43, 43, 40, 0.45);
+  color-scheme: light;
+}
+
+/* ── Dark theme — warm charcoal, not pure black (keeps the editorial warmth) ── */
+.dark {
+  --paper: #15140F;
+  --surface: #1F1E19;
+  --ink: #F1EFE8;
+  --ink2: #CDC9BF;
+  --muted: #A8A49A;
+  --faint: #948F85;
+  --faint2: #6B6860;
+  --line: #322F2A;
+  --line2: #38352E;
+  --line3: #423E36;
+  --subtle: #211F1A;
+  --accent: #66704F;       /* white text clears AA (5.4:1) */
+  --accentdark: #565F43;
+  --accentfg: #AEB890;     /* light olive for text/icons on dark (7.9:1) */
+  --accentlight: #AEB890;
+  --tint: #FFFFFF;
+  --chart-grid: rgba(241, 239, 232, 0.08);
+  --chart-axis: rgba(241, 239, 232, 0.50);
+  color-scheme: dark;
+
+  /* Status text re-tuned lighter so the earthy tones stay AA on dark surfaces. */
+  --color-emerald-400: #5C8468;
+  --color-emerald-500: #6E9A7C;
+  --color-emerald-600: #8FB89C;
+  --color-amber-400: #A9792F;
+  --color-amber-500: #C0913F;
+  --color-amber-600: #D8AE63;
+  --color-red-400: #B0584C;
+  --color-red-500: #C76B5E;
+  --color-red-600: #D98277;
+}
+
+/* Paint the base surface immediately (no white flash before content mounts). */
+html { background: var(--paper); }
+
+/* recharts internals are SVG <line>/<text> with fixed inline colors — retarget
+   them in dark mode via the classNames recharts emits. */
+.dark .recharts-cartesian-grid line { stroke: var(--chart-grid) !important; }
+.dark .recharts-cartesian-axis-tick text,
+.dark .recharts-cartesian-axis line { fill: var(--chart-axis) !important; stroke: var(--chart-grid) !important; }
 
 @layer base {
   * { box-sizing: border-box; margin: 0; padding: 0; }

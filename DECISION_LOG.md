@@ -310,6 +310,33 @@ Google OAuth redirect URLs allowlisted in Supabase are `localhost:3000/auth/call
 
 ---
 
+---
+
+## Round 11 — Dark mode (June 2026)
+
+**Decision: add a full dark mode, built on a semantic token layer rather than `dark:` variants.**
+
+### Why a token layer (not Tailwind `dark:` variants)
+The app had ~600 hardcoded `[#hex]` arbitrary values. Sprinkling `dark:` on each would have doubled that surface and guaranteed drift. Instead, every palette hex was routed **once** through a semantic CSS variable (`paper`/`surface`/`ink`/`muted`/`line`/`accent`/`accentfg`/…) defined in `globals.css` `@theme` + `:root`/`.dark`. A single `.dark` class on `<html>` reskins the whole app. **Light values are byte-identical to the old hexes**, so light mode is provably unchanged — the only risk surface is dark.
+
+### What was built
+- Semantic tokens in `@theme`; light values in `:root`, warm-charcoal dark values in `.dark` (paper `#15140F`, surface `#1F1E19`, ink `#F1EFE8`, etc. — warm, not pure black, to keep the editorial feel).
+- Scripted remap of every utility hex → semantic class across the 5 dashboard pages + login/signup + card (e.g. `text-[#6E6B64]`→`text-muted`, `bg-white`→`bg-surface`, `border-[#EAE8E1]`→`border-line`, `bg-[#5A6247]`→`bg-accent`, `text-[#5A6247]`→`text-accentfg`). Decorative `#A8A59E` category dots left literal.
+- Accent split into `accent` (solid fills, white text) vs `accentfg` (text/icon/border/tint, lighter in dark) so olive stays legible in both modes.
+- `tint` token (black in light, white in dark) so the subtle `bg-black/[0.0x]` hover/inset overlays invert correctly.
+- Status text shades re-tuned lighter inside `.dark` (the AA-on-white earthy tones were too dark on charcoal).
+- recharts: grid/axis retargeted via `.dark .recharts-*` rules; hand-rolled SVG `<text>` fills + tooltip `contentStyle` switched to `var(--…)` (resolves in inline styles) so tooltips aren't a glaring white box on dark.
+- `components/ThemeToggle.tsx` — floating bottom-right switch; persists to `localStorage`. Inline no-flash script in `layout.tsx` applies the class pre-paint (from storage or `prefers-color-scheme`); `<html suppressHydrationWarning>`.
+
+### Verified (this round — Adrian logged in via the localhost test account, so authed pages were finally checked)
+Portfolio, property detail (bills + equity donut + utility AreaChart + tooltip), financials P&L, bookings, inbox — all clean in **both** modes. Programmatic contrast audit in dark: every text/bg pair clears WCAG AA (ink 14.5, ink2 10.1, muted 6.7, faint 5.2, accent 8.0, forest 7.6, ochre 8.1, brick 4.5 on surface). Light mode visually unchanged.
+
+### Known minor / deferred
+- Category-coding dots on financials (blue/violet/teal/orange/pink) and the inbox `REVIEW` badge (blue) are still bright — they're functional category/info indicators, not status, so left as-is. Revisit if we want them earthier.
+- Bookings bar chart occasionally renders bars faint/late (recharts animation timing) — pre-existing, not a dark-mode regression.
+
+---
+
 **Any commit that changes product direction, repositions a feature, or makes a meaningful design/architecture decision must add a new entry here.** This is not a nice-to-have — it's how both collaborators and future Claude sessions stay aligned without re-litigating past decisions.
 
 When adding an entry:
