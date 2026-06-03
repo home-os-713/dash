@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   ArrowLeft,
   Bell,
@@ -67,10 +68,13 @@ export default function InboxPage() {
               <span className="font-serif text-lg font-bold tracking-tight">Inbox</span>
             </div>
           </div>
-          <button className="relative p-2 rounded-xl hover:bg-accentfg/[0.08] transition-colors">
-            <Bell className="w-5 h-5 text-muted" />
-            {counts.urgent > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-400 rounded-full" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button className="relative p-2 rounded-xl hover:bg-accentfg/[0.08] transition-colors">
+              <Bell className="w-5 h-5 text-muted" />
+              {counts.urgent > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-400 rounded-full" />}
+            </button>
+          </div>
         </div>
       </header>
 

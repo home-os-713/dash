@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
-import ThemeToggle from "@/components/ThemeToggle";
 
-// Runs before paint: applies saved theme (or system preference) with no flash.
-const themeInit = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
+// Runs before paint (no flash): apply dark only if the user explicitly chose it.
+// Defaults to light — dark is opt-in via the header toggle.
+const themeInit = `(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();`;
 
 // Display serif — warm, editorial, optical-sized. Drives all headlines (font-serif).
 const fraunces = Fraunces({
@@ -33,10 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body>
-        {children}
-        <ThemeToggle />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

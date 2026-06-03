@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
@@ -1664,6 +1665,7 @@ export default function PropertyDetailPage({
               <Inbox className="w-3.5 h-3.5" />
               Inbox
             </Link>
+            <ThemeToggle />
             <button className="relative p-2 rounded-xl hover:bg-accentfg/[0.08] transition-colors">
               <Bell className="w-5 h-5 text-muted" />
             </button>

@@ -2,6 +2,7 @@
 
 import { use } from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Home as HomeIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,18 +34,21 @@ export default function BookingsPage({ params }: { params: Promise<{ id: string 
   return (
     <div className="min-h-screen bg-paper text-ink">
       <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-xl border-b border-line2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
-          <Link href={`/dashboard/${id}`} className="flex items-center gap-2 text-muted hover:text-ink text-sm">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">{property.name}</span>
-          </Link>
-          <div className="h-5 w-px bg-accentfg/[0.08]" />
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
-              <HomeIcon className="w-4 h-4 text-white" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link href={`/dashboard/${id}`} className="flex items-center gap-2 text-muted hover:text-ink text-sm">
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">{property.name}</span>
+            </Link>
+            <div className="h-5 w-px bg-accentfg/[0.08]" />
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
+                <HomeIcon className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-serif text-base sm:text-lg font-bold tracking-tight">Bookings</span>
             </div>
-            <span className="font-serif text-base sm:text-lg font-bold tracking-tight">Bookings</span>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 

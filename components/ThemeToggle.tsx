@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 
 /**
- * Floating light/dark toggle. The actual class is set pre-paint by the inline
- * script in app/layout.tsx (no flash); this just reflects + flips it and
- * persists the choice to localStorage.
+ * Light/dark switch for the header. The class is set pre-paint by the inline
+ * script in app/layout.tsx (no flash); this reflects + flips it and persists
+ * the choice to localStorage.
  */
 export default function ThemeToggle() {
   const [dark, setDark] = useState(false);
@@ -31,10 +31,14 @@ export default function ThemeToggle() {
       onClick={toggle}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
       title={dark ? "Light mode" : "Dark mode"}
-      className="fixed bottom-5 right-5 z-[60] w-10 h-10 rounded-full bg-surface border border-line shadow-soft flex items-center justify-center text-muted hover:text-ink hover:border-accentfg/40 transition-colors"
+      className="p-2 rounded-xl border border-line text-muted hover:text-ink hover:bg-accentfg/[0.08] transition-colors"
     >
-      {/* Render an icon only after mount so SSR markup matches the client. */}
-      {mounted && (dark ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />)}
+      {/* Render the icon only after mount so SSR markup matches the client. */}
+      {mounted ? (
+        dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />
+      ) : (
+        <span className="block w-5 h-5" />
+      )}
     </button>
   );
 }

@@ -326,7 +326,10 @@ The app had ~600 hardcoded `[#hex]` arbitrary values. Sprinkling `dark:` on each
 - `tint` token (black in light, white in dark) so the subtle `bg-black/[0.0x]` hover/inset overlays invert correctly.
 - Status text shades re-tuned lighter inside `.dark` (the AA-on-white earthy tones were too dark on charcoal).
 - recharts: grid/axis retargeted via `.dark .recharts-*` rules; hand-rolled SVG `<text>` fills + tooltip `contentStyle` switched to `var(--…)` (resolves in inline styles) so tooltips aren't a glaring white box on dark.
-- `components/ThemeToggle.tsx` — floating bottom-right switch; persists to `localStorage`. Inline no-flash script in `layout.tsx` applies the class pre-paint (from storage or `prefers-color-scheme`); `<html suppressHydrationWarning>`.
+- `components/ThemeToggle.tsx` — a switch rendered in **every page header**; persists to `localStorage`. Inline no-flash script in `layout.tsx` applies the class pre-paint; `<html suppressHydrationWarning>`.
+
+### Follow-up (same round): default light + header toggle
+First cut defaulted to dark by following `prefers-color-scheme` and used a floating bottom-right toggle. Adrian read that as "you changed it to dark mode" and didn't notice the corner button. Fixed: **default to light** (dark is opt-in only when explicitly stored — no longer follows the OS setting), and moved the toggle into every page header so the switch is obvious. Lesson: a redesign should land in the *familiar* state first, with the new mode discoverable but opt-in.
 
 ### Verified (this round — Adrian logged in via the localhost test account, so authed pages were finally checked)
 Portfolio, property detail (bills + equity donut + utility AreaChart + tooltip), financials P&L, bookings, inbox — all clean in **both** modes. Programmatic contrast audit in dark: every text/bg pair clears WCAG AA (ink 14.5, ink2 10.1, muted 6.7, faint 5.2, accent 8.0, forest 7.6, ochre 8.1, brick 4.5 on surface). Light mode visually unchanged.

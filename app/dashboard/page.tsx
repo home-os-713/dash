@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
@@ -396,6 +397,7 @@ export default function PortfolioPage() {
                 </Badge>
               )}
             </Link>
+            <ThemeToggle />
             <button className="relative p-2 rounded-xl hover:bg-accentfg/[0.08] transition-colors">
               <Bell className="w-5 h-5 text-muted" />
               {totalUrgent > 0 && (
