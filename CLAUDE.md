@@ -25,7 +25,7 @@ A personal property management web app. Users sign up, add their property detail
 ## Live URLs
 - **Production:** https://homeowner-dashboard-woad.vercel.app
 - **Local dev:** http://localhost:3000
-- **GitHub repo:** https://github.com/jaimegarciae/homeowner-dashboard
+- **GitHub repo:** https://github.com/home-os-713/dash
 - **Supabase project:** https://supabase.com/dashboard/project/feorwntlkwhwrsehmjmd
 - **Vercel dashboard:** https://vercel.com (Jaime's Hobby account)
 
@@ -39,7 +39,7 @@ All four phases of the initial build are complete and verified working:
 The app is fully live: sign-up → email confirmation → dashboard → edit values → persists across sessions and devices.
 
 ## Getting started (new collaborator)
-1. Clone the repo: `git clone https://github.com/jaimegarciae/homeowner-dashboard.git`
+1. Clone the repo: `git clone https://github.com/home-os-713/dash.git`
 2. Install deps: `npm install`
 3. Create `.env.local` in the project root:
    ```
@@ -95,7 +95,7 @@ supabase/
   002_sort_order.sql         # Adds sort_order column to properties for drag-to-reorder
 components/
   ui/card.tsx  ui/badge.tsx  # shadcn components used by /v0 and /homeos
-  ThemeToggle.tsx            # floating light/dark switch — rendered globally in app/layout.tsx
+  ThemeToggle.tsx            # light/dark switch — rendered in every page header (defaults to light)
   PropertyHeader.tsx  MetricsGrid.tsx  MortgageCard.tsx  EquityCard.tsx
   BillsList.tsx  RentalCard.tsx  SpendingChart.tsx  Modal.tsx   # /dashboard only
 ```

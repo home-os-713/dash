@@ -1,7 +1,7 @@
 # Homeowner Dashboard — Partner Briefing
 
 > **Live app:** https://homeowner-dashboard-woad.vercel.app
-> **GitHub repo:** https://github.com/jaimegarciae/homeowner-dashboard
+> **GitHub repo:** https://github.com/home-os-713/dash
 > **Supabase:** https://supabase.com/dashboard/project/feorwntlkwhwrsehmjmd
 
 ---
@@ -43,9 +43,14 @@ Both legacy pages are accessible by URL but intentionally buried. Do not delete 
 
 ## Getting started locally
 
+> **If you already have a local clone from the old repo (`jaimegarciae/homeowner-dashboard`), update your remote:**
+> ```bash
+> git remote set-url origin https://github.com/home-os-713/dash.git
+> ```
+
 ```bash
 # 1. Clone
-git clone https://github.com/jaimegarciae/homeowner-dashboard.git
+git clone https://github.com/home-os-713/dash.git
 cd homeowner-dashboard
 
 # 2. Install
