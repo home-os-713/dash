@@ -2,6 +2,27 @@
 
 # Homeowner Dashboard — Project Context
 
+## Session model
+This project uses a **coordination + dispatch** model:
+
+- **Coordination session** (primary) — pulls latest, reviews partner changes, dispatches task sessions, merges PRs, keeps docs current. Does not do deep feature work.
+- **Task sessions** (spawned) — focused on one workstream (e.g. Zillow integration, DB schema, UI). Retain task-specific context for follow-ups. Always start by reading context files, always end by committing doc updates.
+- **Partner sessions** — same rules as task sessions. Partner's Claude sessions should read and write the context docs.
+
+Parallel task sessions are encouraged — they don't share context so they don't interfere with each other.
+
+## Session checklist
+
+**Start of every session:**
+1. `git pull origin main` — get latest from both collaborators
+2. Read `CLAUDE.md`, `DECISION_LOG.md`, `PARTNER_BRIEFING.md`
+3. Summarise current state before doing anything
+
+**End of every session:**
+1. Update relevant context docs with any decisions, new pages, new deps, or lessons learned
+2. Commit and push the doc updates alongside the code changes
+3. If it was a task session, flag anything the coordination session needs to know
+
 ## Starting a new session
 Read these files before writing any code:
 1. `CLAUDE.md` (this file) — stack, structure, gotchas
