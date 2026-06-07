@@ -107,10 +107,11 @@ app/
   signup/page.tsx
   auth/callback/             # Handles Supabase email confirmation code exchange
   api/
-    property-lookup/route.ts # Rentcast API proxy — fetches estimated property value by address
+    property-lookup/route.ts # Rentcast API proxy — fetches estimated property value + long-term rent by address
     globals.css              # All styles for /dashboard — DO NOT refactor to Tailwind
 proxy.ts                     # Auth guard (Next.js 16: proxy.ts, export proxy, not middleware)
 lib/
+  useRentcastLookup.ts       # Debounced client hook → /api/property-lookup; auto-fills value+rent on add/edit
   types.ts                   # DashboardState, Bill types for /dashboard
   v0/
     mockData.ts              # All mock data + helpers for /v0 demo mode — DO NOT delete
@@ -169,7 +170,8 @@ Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQ
 - **Shared DB**: localhost and production both point to the same Supabase instance — data created locally shows up in production and vice versa.
 - **Multi-property**: The `user_id` unique constraint was dropped in migration 001. `/dashboard` still uses the oldest property per user (`.order('updated_at', ascending: true).limit(1)`). New properties created via `/v0` get fresh rows.
 - **UUID routing in /v0**: `app/v0/[id]/page.tsx` uses a UUID regex to detect real DB IDs vs. demo IDs ("phoenix"/"pvr"). UUID → Supabase query; demo slug → mock data. This lets the demo keep working even after real data is added.
-- **Rentcast (Zillow replacement)**: Zillow's public API shut down in 2021. `/api/property-lookup` proxies to Rentcast API for property value estimates. Requires `RENTCAST_API_KEY` (server-only env var). Without the key the lookup button returns a 503 and the user fills in value manually.
+- **Rentcast (Zillow replacement)**: Zillow's public API shut down in 2021. `/api/property-lookup` proxies to Rentcast for property value + long-term rent estimates. It hits three endpoints in parallel — `/v1/properties` (facts), `/v1/avm/value` (sale value), `/v1/avm/rent/long-term` (monthly rent) — each degrading independently. Returns a normalized camelCase shape (`estimatedValue`, `rentEstimate`, `city`/`state`, beds/baths/sqft…). Requires `RENTCAST_API_KEY` (server-only). Without the key it returns 503 in prod; the UI then leaves fields blank for manual entry.
+- **Rentcast auto-sync on add/edit (Round 12)**: typing an address in the **Add property** modal (`app/dashboard/page.tsx`) or opening the **Edit property** modal (`app/dashboard/[id]/page.tsx`) triggers a **debounced** lookup via the shared `useRentcastLookup` hook (`lib/useRentcastLookup.ts`, 700ms debounce, min 8 chars, aborts stale requests). It pre-fills **prop_val** (estimatedValue) and **income/rent** (rentEstimate), plus **location** (city, state) on add. Auto-fill never clobbers fields the user has manually edited (Add modal tracks a dirty-field set; Edit modal only fills *blank* fields automatically and offers an explicit "Apply Rentcast estimates" button to override saved values). A `Sparkles` badge marks auto-filled fields; loading shows a spinner; any failure is silent and non-blocking (manual entry still works). The Edit modal keys the lookup off the property's **stored `prop.address`** and does **not** add an address input — the address field there is owned by the parallel Maps task. `savePropEdit` now writes both `income` and `rent`.
 - **Mock data preservation**: `lib/v0/mockData.ts` must not be deleted — it powers the demo mode for users with no real properties and the /inbox and /financials pages which aren't yet wired to real data.
 - **Drag-to-reorder**: Portfolio page uses `@dnd-kit` with `rectSortingStrategy` (handles 2-column grid). Grip handle appears on hover at card top-left. Order persists to `sort_order` column in Supabase. `listUserProperties` gracefully falls back to `updated_at` ordering if `sort_order` column doesn't exist yet (migration 002 not yet run).
 - **Rentcast caching**: `/api/property-lookup` returns a dev mock in `NODE_ENV !== 'production'` to avoid burning free-tier credits during development. In production, responses are cached for 30 days via `unstable_cache`.
