@@ -3,7 +3,7 @@
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ChevronRight,
   Home as HomeIcon,
@@ -13,10 +13,11 @@ import {
   Receipt,
   Plus,
   X,
-  Search,
   Loader2,
   GripVertical,
+  Sparkles,
 } from "lucide-react";
+import { useRentcastLookup } from "@/lib/useRentcastLookup";
 import {
   DndContext,
   closestCenter,
@@ -225,10 +226,16 @@ export default function PortfolioPage() {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [form, setForm] = useState<PropertyForm>(emptyForm);
-  const [lookingUp, setLookingUp] = useState(false);
-  const [lookupError, setLookupError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+
+  // Fields the user has manually typed into — auto-fill must never clobber these.
+  const dirtyFields = useRef<Set<keyof PropertyForm>>(new Set());
+  // Tracks which fields the latest Rentcast lookup auto-filled (for the UI hint).
+  const [autofilled, setAutofilled] = useState<Set<keyof PropertyForm>>(new Set());
+
+  // Debounced Rentcast lookup driven by the address field, only while modal open.
+  const lookup = useRentcastLookup(form.address, showAddModal);
 
   // dnd-kit sensors: require 8px movement before starting drag (prevents accidental drags on tap)
   const sensors = useSensors(
@@ -305,36 +312,42 @@ export default function PortfolioPage() {
   }
 
   function setField(key: keyof PropertyForm, value: string) {
+    // Address is the lookup key, not an auto-filled output — typing it
+    // shouldn't mark it dirty. Any other field the user edits is "owned" by
+    // them and protected from future auto-fills.
+    if (key !== "address") dirtyFields.current.add(key);
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  async function handleLookup() {
-    if (!form.address.trim()) return;
-    setLookingUp(true);
-    setLookupError("");
-    try {
-      const res = await fetch(
-        `/api/property-lookup?address=${encodeURIComponent(form.address)}`
-      );
-      const data = await res.json();
-      if (!res.ok) {
-        setLookupError(data.error ?? "Lookup failed");
-        return;
+  // Apply a fresh Rentcast result: fill prop value, rent (monthly income) and
+  // location — but only fields the user hasn't manually edited. Never blocks.
+  useEffect(() => {
+    const data = lookup.data;
+    if (!data) return;
+
+    const filled = new Set<keyof PropertyForm>();
+    setForm((f) => {
+      const next = { ...f };
+      if (!dirtyFields.current.has("propVal") && data.estimatedValue != null) {
+        next.propVal = String(Math.round(data.estimatedValue));
+        filled.add("propVal");
       }
-      setForm((f) => ({
-        ...f,
-        propVal: data.estimatedValue ? String(Math.round(data.estimatedValue)) : f.propVal,
-        location:
-          data.city && data.state
-            ? `${data.city}, ${data.state}`
-            : f.location,
-      }));
-    } catch {
-      setLookupError("Lookup failed — check your network or API key.");
-    } finally {
-      setLookingUp(false);
-    }
-  }
+      if (!dirtyFields.current.has("income") && data.rentEstimate != null) {
+        next.income = String(Math.round(data.rentEstimate));
+        filled.add("income");
+      }
+      if (
+        !dirtyFields.current.has("location") &&
+        data.city &&
+        data.state
+      ) {
+        next.location = `${data.city}, ${data.state}`;
+        filled.add("location");
+      }
+      return next;
+    });
+    setAutofilled(filled);
+  }, [lookup.data]);
 
   async function handleSaveProperty() {
     if (!form.name.trim() || !form.address.trim()) {
@@ -362,6 +375,8 @@ export default function PortfolioPage() {
       });
       setDbProperties((prev) => [...prev, { ...created, bills: [] }]);
       setForm(emptyForm);
+      dirtyFields.current = new Set();
+      setAutofilled(new Set());
       setShowAddModal(false);
     } catch (e: unknown) {
       setSaveError(e instanceof Error ? e.message : "Save failed.");
@@ -504,7 +519,13 @@ export default function PortfolioPage() {
             )}
           </div>
           <button
-            onClick={() => { setShowAddModal(true); setSaveError(""); }}
+            onClick={() => {
+              setForm(emptyForm);
+              dirtyFields.current = new Set();
+              setAutofilled(new Set());
+              setSaveError("");
+              setShowAddModal(true);
+            }}
             className="flex items-center gap-1.5 text-xs text-accentfg bg-accentfg/[0.06] hover:bg-accentfg/[0.10] border border-accentfg/20 rounded-xl px-3 py-1.5 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -661,37 +682,37 @@ export default function PortfolioPage() {
                 />
               </div>
 
-              {/* Address + Lookup */}
+              {/* Address — drives an automatic, debounced Rentcast lookup */}
               <div>
                 <label className="block text-[11px] uppercase tracking-wider text-muted mb-1.5">
                   Address *
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    value={form.address}
-                    onChange={(e) => setField("address", e.target.value)}
-                    placeholder="5421 E Desert Ridge Dr, Phoenix, AZ"
-                    className="flex-1 bg-paper border border-line3 rounded-xl px-3 py-2.5 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
-                  />
-                  <button
-                    onClick={handleLookup}
-                    disabled={lookingUp || !form.address.trim()}
-                    className="flex items-center gap-1.5 px-3 py-2.5 text-xs text-accentfg bg-accentfg/[0.06] hover:bg-accentfg/[0.10] border border-accentfg/20 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-                  >
-                    {lookingUp ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Search className="w-3.5 h-3.5" />
-                    )}
-                    Look up value
-                  </button>
-                </div>
-                {lookupError && (
-                  <p className="text-xs text-red-500 mt-1">{lookupError}</p>
+                <input
+                  value={form.address}
+                  onChange={(e) => setField("address", e.target.value)}
+                  placeholder="5421 E Desert Ridge Dr, Phoenix, AZ"
+                  className="w-full bg-paper border border-line3 rounded-xl px-3 py-2.5 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
+                />
+                {/* Lookup status — loading / filled / failed (failure is non-blocking) */}
+                {lookup.loading ? (
+                  <p className="flex items-center gap-1.5 text-[11px] text-muted mt-1.5">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Looking up value &amp; rent from Rentcast…
+                  </p>
+                ) : autofilled.size > 0 ? (
+                  <p className="flex items-center gap-1.5 text-[11px] text-accentfg mt-1.5">
+                    <Sparkles className="w-3 h-3" />
+                    Auto-filled from Rentcast — edit any field to override.
+                  </p>
+                ) : lookup.error ? (
+                  <p className="text-[11px] text-muted mt-1.5">
+                    Couldn&apos;t fetch estimates — enter value and rent manually below.
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-faint2 mt-1.5">
+                    We&apos;ll auto-fill estimated value &amp; rent from Rentcast as you type.
+                  </p>
                 )}
-                <p className="text-[10px] text-faint2 mt-1">
-                  Fetches estimated value from Rentcast (requires RENTCAST_API_KEY)
-                </p>
               </div>
 
               {/* Location + Type */}
@@ -725,8 +746,11 @@ export default function PortfolioPage() {
               {/* Estimated value + Monthly income */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-muted mb-1.5">
+                  <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted mb-1.5">
                     Est. value ($)
+                    {autofilled.has("propVal") && (
+                      <Sparkles className="w-3 h-3 text-accentfg" />
+                    )}
                   </label>
                   <input
                     value={form.propVal}
@@ -737,8 +761,11 @@ export default function PortfolioPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-muted mb-1.5">
+                  <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted mb-1.5">
                     Monthly income ($)
+                    {autofilled.has("income") && (
+                      <Sparkles className="w-3 h-3 text-accentfg" />
+                    )}
                   </label>
                   <input
                     value={form.income}

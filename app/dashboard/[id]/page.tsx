@@ -26,6 +26,7 @@ import {
   Pencil,
   Plus,
   X,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
+import { useRentcastLookup } from "@/lib/useRentcastLookup";
 import {
   type DbPropertyWithBills,
   type DbBill,
@@ -121,6 +123,58 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
     status_label: "Upcoming",
   });
 
+  // ── Rentcast auto-sync (edit modal) ───────────────────────────────────────
+  // Driven by the property's stored address; only fetches while the Edit modal
+  // is open. We don't edit the address here (a parallel Maps task owns that
+  // field) — we key off prop.address. Failures are silent; user edits manually.
+  const editLookup = useRentcastLookup(prop.address ?? "", showPropModal);
+  // Which prop-form fields the latest lookup pre-filled (for the UI hint).
+  const [editAutofilled, setEditAutofilled] = useState<Set<"prop_val" | "income">>(
+    new Set()
+  );
+
+  // On open, pre-fill ONLY blank fields so we never silently overwrite values
+  // the user already saved. Explicit "apply estimates" (below) can override.
+  useEffect(() => {
+    const data = editLookup.data;
+    if (!data || !showPropModal) return;
+    const filled = new Set<"prop_val" | "income">();
+    setPropForm((f) => {
+      const next = { ...f };
+      if (!f.prop_val.trim() && data.estimatedValue != null) {
+        next.prop_val = String(Math.round(data.estimatedValue));
+        filled.add("prop_val");
+      }
+      if (!f.income.trim() && data.rentEstimate != null) {
+        next.income = String(Math.round(data.rentEstimate));
+        filled.add("income");
+      }
+      return next;
+    });
+    setEditAutofilled(filled);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editLookup.data, showPropModal]);
+
+  // Explicit override: replace value + income with the latest Rentcast estimates.
+  function applyEditEstimates() {
+    const data = editLookup.data;
+    if (!data) return;
+    const filled = new Set<"prop_val" | "income">();
+    setPropForm((f) => {
+      const next = { ...f };
+      if (data.estimatedValue != null) {
+        next.prop_val = String(Math.round(data.estimatedValue));
+        filled.add("prop_val");
+      }
+      if (data.rentEstimate != null) {
+        next.income = String(Math.round(data.rentEstimate));
+        filled.add("income");
+      }
+      return next;
+    });
+    setEditAutofilled(filled);
+  }
+
   // ── Derived values ────────────────────────────────────────────────────────
   const health = computePropertyHealth(bills);
   const noi = computeNOI(prop, bills);
@@ -180,11 +234,15 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
   // ── Supabase save handlers ────────────────────────────────────────────────
   async function savePropEdit() {
     setSaving(true);
+    const incomeVal = propForm.income ? Number(propForm.income) : null;
     const updates = {
       name: propForm.name,
       location: propForm.location,
       prop_val: propForm.prop_val ? Number(propForm.prop_val) : null,
-      income: propForm.income ? Number(propForm.income) : null,
+      income: incomeVal,
+      // Keep rent in sync with income so the estimated-rent value persists in
+      // the schema's `rent` column too (detail view reads income ?? rent).
+      rent: incomeVal,
       occupancy: propForm.occupancy ? Number(propForm.occupancy) : null,
       type: propForm.type,
     };
@@ -277,7 +335,20 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
               );
             })}
             <button
-              onClick={() => setShowPropModal(true)}
+              onClick={() => {
+                // Re-seed the form from the current property so estimates
+                // pre-fill against the latest saved values, not stale ones.
+                setPropForm({
+                  name: prop.name ?? "",
+                  location: prop.location ?? "",
+                  prop_val: String(prop.prop_val ?? ""),
+                  income: String(prop.income ?? ""),
+                  occupancy: String(prop.occupancy ?? ""),
+                  type: prop.type ?? "Primary",
+                });
+                setEditAutofilled(new Set());
+                setShowPropModal(true);
+              }}
               className="flex items-center gap-1.5 bg-tint/[0.025] hover:bg-tint/[0.05] border border-line2 rounded-lg px-2.5 py-1.5 transition-colors"
             >
               <Pencil className="w-3.5 h-3.5 text-muted" />
@@ -905,13 +976,63 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                 <label className={labelCls}>Location</label>
                 <input className={inputCls} value={propForm.location} onChange={(e) => setPropForm((f) => ({ ...f, location: e.target.value }))} placeholder="Phoenix, AZ" />
               </div>
+
+              {/* Rentcast sync status — driven by the property's address. */}
+              {prop.address?.trim() ? (
+                editLookup.loading ? (
+                  <p className="flex items-center gap-1.5 text-[11px] text-muted">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Fetching value &amp; rent estimates from Rentcast…
+                  </p>
+                ) : editLookup.data &&
+                  (editLookup.data.estimatedValue != null ||
+                    editLookup.data.rentEstimate != null) ? (
+                  <button
+                    type="button"
+                    onClick={applyEditEstimates}
+                    className="flex items-center gap-1.5 text-[11px] text-accentfg bg-accentfg/[0.06] hover:bg-accentfg/[0.10] border border-accentfg/20 rounded-lg px-2.5 py-1.5 transition-colors"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Apply Rentcast estimates
+                    {editLookup.data.estimatedValue != null && (
+                      <span className="text-muted">
+                        · {fmtCurrency(Math.round(editLookup.data.estimatedValue))}
+                      </span>
+                    )}
+                    {editLookup.data.rentEstimate != null && (
+                      <span className="text-muted">
+                        · {fmtCurrency(Math.round(editLookup.data.rentEstimate))}/mo
+                      </span>
+                    )}
+                  </button>
+                ) : editLookup.error ? (
+                  <p className="text-[11px] text-muted">
+                    Couldn&apos;t reach Rentcast — edit values manually below.
+                  </p>
+                ) : null
+              ) : (
+                <p className="text-[11px] text-faint2">
+                  Add an address to auto-fill value &amp; rent from Rentcast.
+                </p>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>Est. value ($)</label>
+                  <label className={`${labelCls} flex items-center gap-1.5`}>
+                    Est. value ($)
+                    {editAutofilled.has("prop_val") && (
+                      <Sparkles className="w-3 h-3 text-accentfg" />
+                    )}
+                  </label>
                   <input className={inputCls} type="number" value={propForm.prop_val} onChange={(e) => setPropForm((f) => ({ ...f, prop_val: e.target.value }))} placeholder="450000" />
                 </div>
                 <div>
-                  <label className={labelCls}>Monthly income ($)</label>
+                  <label className={`${labelCls} flex items-center gap-1.5`}>
+                    Monthly income ($)
+                    {editAutofilled.has("income") && (
+                      <Sparkles className="w-3 h-3 text-accentfg" />
+                    )}
+                  </label>
                   <input className={inputCls} type="number" value={propForm.income} onChange={(e) => setPropForm((f) => ({ ...f, income: e.target.value }))} placeholder="3500" />
                 </div>
               </div>

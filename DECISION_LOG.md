@@ -340,6 +340,35 @@ Portfolio, property detail (bills + equity donut + utility AreaChart + tooltip),
 
 ---
 
+## Round 12 — Rentcast auto-sync on add/edit (June 2026)
+
+**Decision: make Rentcast value + rent pre-fill *automatic* (debounced as the user types the address), replacing the manual "Look up value" button — but never let it overwrite what the user typed, and never block on failure.**
+
+### Why
+The Add-property modal had a manual "Look up value" button that (a) only fetched the sale value, not rent, and (b) required an extra click. The dispatched task was to make the lookup automatic and cover the **rent** field too, so adding/editing a property is mostly hands-free while staying fully overridable.
+
+### What was built
+- **`/api/property-lookup`** now also calls `/v1/avm/rent/long-term` (third parallel fetch) and returns `rentEstimate`/`rentRangeLow`/`rentRangeHigh`. Each of the three Rentcast endpoints degrades independently; the route is wrapped in try/catch so it returns a clean error JSON instead of throwing. Dev mock extended with rent fields.
+- **`lib/useRentcastLookup.ts`** — a shared debounced client hook (700ms, min 8 chars, `AbortController` to drop stale responses, never throws). Returns `{ data, loading, error }`.
+- **Add modal** (`app/dashboard/page.tsx`): manual lookup button removed. The hook fires off the address field; results pre-fill `prop_val`, monthly income (rent), and location. A **dirty-field set** (`useRef`) tracks anything the user has manually edited so auto-fill never clobbers it. `Sparkles` badge marks auto-filled fields; spinner while loading; failures fall back to manual entry silently.
+- **Edit modal** (`app/dashboard/[id]/page.tsx`): keyed off the property's **stored `prop.address`** (no new address input added here — see below). On open it auto-fills only **blank** value/income fields (so it never silently overwrites saved data), plus an explicit **"Apply Rentcast estimates"** button (shows the $ figures) to override existing values on demand. `savePropEdit` now persists both `income` and `rent`.
+
+### Key product decisions
+1. **Auto-fill is non-destructive.** Add modal protects user-edited fields via a dirty set; Edit modal only auto-fills blanks and requires an explicit click to override saved values. The whole point of pulling from an estimate API is convenience, not surprise edits — overwriting a number the user deliberately set would erode trust (same principle as Round 5: don't show numbers the user can't trust).
+2. **The Edit modal does NOT add an address `<input>`.** A parallel **Maps** task owns the address field in that same modal. To avoid a merge collision, this task keys the Edit-modal lookup off the existing `prop.address` value rather than introducing/editing an address input. When the Maps task lands an editable address field, the lookup will naturally re-fire as `prop.address` changes — or the hook can be repointed at the Maps form state in a quick follow-up.
+3. **Failure is always silent + manual.** No blocking errors, no crash — consistent with the standing "never block the user" decision.
+
+### Verification
+- `npm run build` passes (Next.js 16 / Turbopack). `tsc --noEmit` clean.
+- **Tooling note:** the worktree's `node_modules` was a symlink to the main worktree's, which **Turbopack rejects** ("Symlink points out of the filesystem root") — the build fatal-errored until the symlink was replaced with a real `npm install` in the worktree. If a future worktree build dies with that error, do a local `npm install` (node_modules is gitignored, so nothing to commit).
+- UI is auth-gated; not screenshot-verified headlessly (same constraint noted in Rounds 9–10). The API dev-mock path and the debounce/abort logic were verified by inspection + typecheck. Note: `proxy.ts`'s matcher actually **does** catch `/api/*` (redirects unauthed API calls to `/login` with 307) — contrary to the dispatch's "api routes are public" note — but in-app the authenticated session cookie rides along with the same-origin `fetch`, so the modal lookups work for logged-in users.
+
+### Open / follow-up
+- Coordinate with the Maps task on the Edit-modal address field (point the lookup at the new editable address once it lands).
+- `RENTCAST_API_KEY` must be set in **Vercel** env (Production) for prod lookups — without it prod returns 503 and fields stay manual. Free tier is 50 req/mo; the route caches 30 days per address.
+
+---
+
 **Any commit that changes product direction, repositions a feature, or makes a meaningful design/architecture decision must add a new entry here.** This is not a nice-to-have — it's how both collaborators and future Claude sessions stay aligned without re-litigating past decisions.
 
 When adding an entry:
