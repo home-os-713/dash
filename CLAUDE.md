@@ -13,15 +13,23 @@ Parallel task sessions are encouraged — they don't share context so they don't
 
 ## Session checklist
 
-**Start of every session:**
+**Start of every coordination session (Jaime coming online):**
 1. `git pull origin main` — get latest from both collaborators
 2. Read `CLAUDE.md`, `DECISION_LOG.md`, `PARTNER_BRIEFING.md`
-3. Summarise current state before doing anything
+3. Summarise commits since last session — who pushed, what changed
+4. Review open follow-ups from previous session
+5. Align on task(s) for the day
+6. Dispatch task sessions as needed
+
+**Start of every task session (spawned or partner):**
+1. `git pull origin main`
+2. Read `CLAUDE.md`, `DECISION_LOG.md`, `PARTNER_BRIEFING.md`
+3. Summarise current state before writing any code
 
 **End of every session:**
-1. Update relevant context docs with any decisions, new pages, new deps, or lessons learned
-2. Commit and push the doc updates alongside the code changes
-3. If it was a task session, flag anything the coordination session needs to know
+1. Update relevant context docs with decisions, new pages, new deps, lessons learned
+2. Commit and push doc updates alongside code changes
+3. Flag anything the coordination session needs to know
 
 ## Starting a new session
 Read these files before writing any code:
