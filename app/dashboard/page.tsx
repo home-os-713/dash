@@ -34,6 +34,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { createClient } from "@/lib/supabase/client";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import {
   type DbPropertyWithBills,
   type DbBill,
@@ -667,9 +668,16 @@ export default function PortfolioPage() {
                   Address *
                 </label>
                 <div className="flex gap-2">
-                  <input
+                  <AddressAutocomplete
                     value={form.address}
-                    onChange={(e) => setField("address", e.target.value)}
+                    onChange={(v) => setField("address", v)}
+                    onSelect={(sel) => {
+                      // Auto-fill "City, ST" from the picked place when the user
+                      // hasn't already typed a location of their own.
+                      if (sel.location && !form.location.trim()) {
+                        setField("location", sel.location);
+                      }
+                    }}
                     placeholder="5421 E Desert Ridge Dr, Phoenix, AZ"
                     className="flex-1 bg-paper border border-line3 rounded-xl px-3 py-2.5 text-sm text-ink placeholder-faint2 focus:outline-none focus:border-accentfg/30"
                   />

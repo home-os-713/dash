@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import PropertyMap from "@/components/PropertyMap";
 import {
   AreaChart,
   Area,
@@ -286,6 +287,16 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
           </div>
         </div>
       </div>
+
+      {/* ── 1b. Location map (pin only) ───────────────────────────────────── */}
+      {/* PropertyMap self-hides if the Maps key is missing or geocoding fails,
+          so this whole block collapses gracefully with no broken map box. */}
+      {(prop.address || prop.location) && (
+        <PropertyMap
+          address={prop.address ?? prop.location ?? ""}
+          className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden border border-line shadow-soft"
+        />
+      )}
 
       {/* ── 2. KPI cards ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
