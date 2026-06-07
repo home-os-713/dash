@@ -92,6 +92,7 @@ The app is fully live: sign-up → email confirmation → dashboard → edit val
 - **Tailwind CSS v4** + **shadcn/ui** + **recharts** + **lucide-react** — used in `/dashboard` (main product)
 - **Fraunces** (display serif) + **Inter** (UI/body sans) via `next/font/google` — loaded in `app/layout.tsx`, mapped onto Tailwind's `font-serif`/`font-sans` tokens in `globals.css` `@theme`. `font-serif` → Fraunces, default body + `font-sans` → Inter. (Round 10)
 - **@dnd-kit/core** + **@dnd-kit/sortable** + **@dnd-kit/utilities** — drag-to-reorder on portfolio page
+- **@googlemaps/js-api-loader** (+ `@types/google.maps` dev dep) — loads the Google Maps JS SDK client-side for address autocomplete (Places) on the add-property modal and the pin map on `/dashboard/[id]`. Uses the v2 functional API (`setOptions` + `importLibrary`), dynamically imported inside `lib/maps.ts` so it never touches `window` during SSR. Requires `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — degrades gracefully (plain input / hidden map) when absent. (Maps round)
 
 ## Project structure
 ```
@@ -117,6 +118,7 @@ lib/
     mockData.ts              # All mock data + helpers for /v0 demo mode — DO NOT delete
     db.ts                    # DbProperty, DbBill types + Supabase query helpers for /v0
   utils.ts                   # cn() helper for Tailwind class merging
+  maps.ts                    # Google Maps SDK loader (client-only, graceful-degrade) — used by AddressAutocomplete + PropertyMap
   supabase/
     client.ts                # Browser Supabase client (use in 'use client' components)
     server.ts                # Server Supabase client (use in route handlers / server components)
@@ -126,6 +128,8 @@ supabase/
 components/
   ui/card.tsx  ui/badge.tsx  # shadcn components used by /v0 and /homeos
   ThemeToggle.tsx            # light/dark switch — rendered in every page header (defaults to light)
+  AddressAutocomplete.tsx    # Places-autocomplete address input (drop-in; falls back to plain input)
+  PropertyMap.tsx            # Small pin-only map for /dashboard/[id] (hides itself if no key / geocode fails)
   PropertyHeader.tsx  MetricsGrid.tsx  MortgageCard.tsx  EquityCard.tsx
   BillsList.tsx  RentalCard.tsx  SpendingChart.tsx  Modal.tsx   # /dashboard only
 ```
@@ -176,6 +180,7 @@ Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQ
 - **Drag-to-reorder**: Portfolio page uses `@dnd-kit` with `rectSortingStrategy` (handles 2-column grid). Grip handle appears on hover at card top-left. Order persists to `sort_order` column in Supabase. `listUserProperties` gracefully falls back to `updated_at` ordering if `sort_order` column doesn't exist yet (migration 002 not yet run).
 - **Rentcast caching**: `/api/property-lookup` returns a dev mock in `NODE_ENV !== 'production'` to avoid burning free-tier credits during development. In production, responses are cached for 30 days via `unstable_cache`.
 - **RealPropertyDetail**: Fully redesigned — equity SVG donut, mortgage progress bar, spending breakdown bars, bills list with Add bill modal, Edit property and Edit mortgage modals. All saves are optimistic (local state updated immediately, Supabase updated in background).
+- **Google Maps (Maps round)**: address autocomplete on the add-property modal (`components/AddressAutocomplete.tsx`) + a pin-only map on `/dashboard/[id]` (`components/PropertyMap.tsx`), both loading the SDK via `lib/maps.ts`. **Everything degrades gracefully** behind the `mapsConfigured` flag — no `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` ⇒ plain address input + no map, never a crash. **SSR gotcha:** `@googlemaps/js-api-loader` v2 reads `window` at module-eval time, which throws when Next prerenders the client `/dashboard` page; `lib/maps.ts` works around this by **dynamically `import()`-ing the loader inside its functions** (browser-only paths) instead of importing it at the top. Map basemap is custom-styled for light/dark via `MapTypeStyle` arrays keyed off the `.dark` class; the Places dropdown (`.pac-container`, injected into `<body>` outside React) is themed in `globals.css` and z-indexed above the modal. Pin only — no street view / default UI for v1.
 - **After every change session**: provide user a summary + localhost link to the relevant page. This is a collaboration norm.
 
 ## Environment variables
@@ -183,9 +188,11 @@ Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQ
 NEXT_PUBLIC_SUPABASE_URL=https://feorwntlkwhwrsehmjmd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<get from Supabase dashboard → Settings → API → anon public>
 RENTCAST_API_KEY=<get from https://app.rentcast.io → API Keys; free tier = 50 req/mo>
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<get from Google Cloud Console → APIs & Services → Credentials>
 ```
-Never commit `.env.local`. Set all three in Vercel → Project → Settings → Environment Variables.
+Never commit `.env.local`. Set all in Vercel → Project → Settings → Environment Variables.
 `RENTCAST_API_KEY` is server-only (no `NEXT_PUBLIC_` prefix) — kept out of client bundles.
+`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is **public/client-safe by design** (the Maps JS SDK runs in the browser). It powers Places address autocomplete on the add-property modal and the pin map on `/dashboard/[id]`. **Restrict it in Google Cloud Console** to HTTP referrers `localhost:3000` + `homeowner-dashboard-woad.vercel.app` and to the **Maps JavaScript API**, **Places API**, and **Geocoding API**. If unset, address autocomplete falls back to a plain input and the map is hidden — the app never crashes.
 
 ## Running locally
 ```bash
