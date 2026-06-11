@@ -314,8 +314,9 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 animate-rise stagger">
 
-      {/* ── 1. Hero banner ────────────────────────────────────────────────── */}
-      <div className={`bg-surface rounded-2xl border border-line shadow-soft ${hc.border} border-l-4 p-5 sm:p-6`}>
+      {/* ── 1. Hero banner + location map (side by side on desktop) ───────── */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:items-stretch">
+      <div className={`flex-1 min-w-0 bg-surface rounded-2xl border border-line shadow-soft ${hc.border} border-l-4 p-5 sm:p-6`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start sm:items-center gap-4">
             <div className={`w-12 h-12 rounded-2xl ${hc.scoreBg} flex items-center justify-center shrink-0`}>
@@ -372,6 +373,19 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
         </div>
       </div>
 
+        {/* Location map — compact widget beside the banner. Full width on mobile,
+            fixed beside it on desktop (stretches to the banner height). Returns
+            null (row collapses to just the banner) if the key is missing or
+            geocoding fails. */}
+        {(prop.address || prop.location) && (
+          <PropertyMap
+            address={prop.address ?? prop.location ?? ""}
+            lat={prop.lat}
+            lng={prop.lng}
+            className="relative w-full lg:w-72 h-40 lg:h-auto shrink-0 rounded-2xl overflow-hidden border border-line shadow-soft"
+          />
+        )}
+      </div>
 
       {/* ── 2. KPI cards ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
@@ -499,21 +513,6 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
             </div>
           </div>
         )}
-
-      {/* ── 2c. Location map (pin only) ───────────────────────────────────── */}
-      {/* A compact location widget (capped width on desktop, full width on
-          mobile) rather than a full-bleed banner. PropertyMap returns null if
-          the key is missing or geocoding fails, so this collapses gracefully.
-          NOTE: detail page is slated to become a user-reorderable widget grid —
-          see PARTNER_BRIEFING.md. */}
-      {(prop.address || prop.location) && (
-        <PropertyMap
-          address={prop.address ?? prop.location ?? ""}
-          lat={prop.lat}
-          lng={prop.lng}
-          className="relative w-full sm:max-w-sm h-40 rounded-2xl overflow-hidden border border-line shadow-soft"
-        />
-      )}
 
       {/* ── 2b. Action items (auto-generated from bill status) ────────────── */}
       {(() => {
