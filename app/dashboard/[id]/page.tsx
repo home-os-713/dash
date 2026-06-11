@@ -86,6 +86,16 @@ const categoryColors: Record<string, string> = {
   Other: "bg-[#A8A59E]",
 };
 
+// Compact money for tight spaces / ranges, e.g. $485K, $1.2M.
+function fmtCompactUsd(n: number): string {
+  if (n >= 1_000_000) {
+    const m = n / 1_000_000;
+    return `$${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
+  }
+  if (n >= 1_000) return `$${Math.round(n / 1000)}K`;
+  return `$${Math.round(n)}`;
+}
+
 function RealPropertyDetail({ property: initialProperty }: { property: DbPropertyWithBills }) {
   const supabase = createClient();
 
@@ -124,11 +134,14 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
     status_label: "Upcoming",
   });
 
-  // ── Rentcast auto-sync (edit modal) ───────────────────────────────────────
-  // Driven by the property's stored address; only fetches while the Edit modal
-  // is open. We don't edit the address here (a parallel Maps task owns that
-  // field) — we key off prop.address. Failures are silent; user edits manually.
-  const editLookup = useRentcastLookup(prop.address ?? "", showPropModal);
+  // ── Rentcast estimate for this property ───────────────────────────────────
+  // Always-on lookup keyed off the stored address. In production this is an
+  // app-level cache hit (migration 003 `rentcast_cache`) so it costs no API
+  // calls; in dev it returns the mock. Powers BOTH the reference estimate strip
+  // and the edit modal's pre-fill. We don't edit the address here (the Add
+  // modal / Maps owns that). Failures are silent; the user edits manually.
+  const estLookup = useRentcastLookup(prop.address ?? "", true);
+  const est = estLookup.data;
   // Which prop-form fields the latest lookup pre-filled (for the UI hint).
   const [editAutofilled, setEditAutofilled] = useState<Set<"prop_val" | "income">>(
     new Set()
@@ -137,7 +150,7 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
   // On open, pre-fill ONLY blank fields so we never silently overwrite values
   // the user already saved. Explicit "apply estimates" (below) can override.
   useEffect(() => {
-    const data = editLookup.data;
+    const data = estLookup.data;
     if (!data || !showPropModal) return;
     const filled = new Set<"prop_val" | "income">();
     setPropForm((f) => {
@@ -154,11 +167,11 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
     });
     setEditAutofilled(filled);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editLookup.data, showPropModal]);
+  }, [estLookup.data, showPropModal]);
 
   // Explicit override: replace value + income with the latest Rentcast estimates.
   function applyEditEstimates() {
-    const data = editLookup.data;
+    const data = estLookup.data;
     if (!data) return;
     const filled = new Set<"prop_val" | "income">();
     setPropForm((f) => {
@@ -359,23 +372,35 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
         </div>
       </div>
 
-      {/* ── 1b. Location map (pin only) ───────────────────────────────────── */}
-      {/* PropertyMap self-hides if the Maps key is missing or geocoding fails,
-          so this whole block collapses gracefully with no broken map box. */}
-      {(prop.address || prop.location) && (
-        <PropertyMap
-          address={prop.address ?? prop.location ?? ""}
-          className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden border border-line shadow-soft"
-        />
-      )}
 
       {/* ── 2. KPI cards ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
-        {/* Est. value */}
+        {/* Est. value — falls back to the Rentcast estimate range when unset */}
         <div className="bg-surface border border-line rounded-2xl shadow-soft p-4">
           <p className="text-[11px] uppercase tracking-wider text-muted mb-3">Est. Value</p>
-          <p className="text-2xl font-bold tnum text-accentfg">{propVal > 0 ? fmtCurrency(propVal) : "—"}</p>
-          <p className="text-xs text-faint mt-1">Property</p>
+          {propVal > 0 ? (
+            <>
+              <p className="text-2xl font-bold tnum text-accentfg">{fmtCurrency(propVal)}</p>
+              <p className="text-xs text-faint mt-1">Property</p>
+            </>
+          ) : est?.priceRangeLow != null && est?.priceRangeHigh != null ? (
+            <>
+              <p className="text-lg font-bold tnum text-accentfg">
+                {fmtCompactUsd(est.priceRangeLow)}–{fmtCompactUsd(est.priceRangeHigh)}
+              </p>
+              <p className="text-xs text-faint mt-1">Rentcast est.</p>
+            </>
+          ) : est?.estimatedValue != null ? (
+            <>
+              <p className="text-2xl font-bold tnum text-accentfg">{fmtCurrency(Math.round(est.estimatedValue))}</p>
+              <p className="text-xs text-faint mt-1">Rentcast est.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-2xl font-bold tnum text-accentfg">—</p>
+              <p className="text-xs text-faint mt-1">Property</p>
+            </>
+          )}
         </div>
         {/* Equity */}
         <div className="bg-surface border border-line rounded-2xl shadow-soft p-4">
@@ -408,6 +433,87 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
           </p>
         </div>
       </div>
+
+      {/* ── 2a. Rentcast estimate (reference; appears when we have cached data) */}
+      {est &&
+        (est.bedrooms != null ||
+          est.squareFootage != null ||
+          est.priceRangeLow != null ||
+          est.rentRangeLow != null ||
+          est.rentEstimate != null) && (
+          <div className="bg-surface border border-line rounded-2xl shadow-soft p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] uppercase tracking-wider text-muted">Rentcast estimate</p>
+              <span className="text-[10px] text-faint2 italic">reference · not your entered values</span>
+            </div>
+            {(est.bedrooms != null ||
+              est.bathrooms != null ||
+              est.squareFootage != null ||
+              est.yearBuilt != null ||
+              est.propertyType) && (
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {est.bedrooms != null && (
+                  <span className="inline-flex items-center rounded-lg bg-tint/[0.04] border border-subtle px-2 py-1 text-xs text-ink2 tnum">{est.bedrooms} bd</span>
+                )}
+                {est.bathrooms != null && (
+                  <span className="inline-flex items-center rounded-lg bg-tint/[0.04] border border-subtle px-2 py-1 text-xs text-ink2 tnum">{est.bathrooms} ba</span>
+                )}
+                {est.squareFootage != null && (
+                  <span className="inline-flex items-center rounded-lg bg-tint/[0.04] border border-subtle px-2 py-1 text-xs text-ink2 tnum">{est.squareFootage.toLocaleString()} sqft</span>
+                )}
+                {est.yearBuilt != null && (
+                  <span className="inline-flex items-center rounded-lg bg-tint/[0.04] border border-subtle px-2 py-1 text-xs text-ink2">Built {est.yearBuilt}</span>
+                )}
+                {est.propertyType && (
+                  <span className="inline-flex items-center rounded-lg bg-tint/[0.04] border border-subtle px-2 py-1 text-xs text-ink2">{est.propertyType}</span>
+                )}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[11px] text-muted mb-0.5">Est. value range</p>
+                <p className="text-sm font-semibold tnum text-ink">
+                  {est.priceRangeLow != null && est.priceRangeHigh != null
+                    ? `${fmtCompactUsd(est.priceRangeLow)}–${fmtCompactUsd(est.priceRangeHigh)}`
+                    : est.estimatedValue != null
+                    ? fmtCompactUsd(est.estimatedValue)
+                    : "—"}
+                </p>
+                {propVal <= 0 && (est.priceRangeLow != null || est.estimatedValue != null) && (
+                  <p className="text-[10px] text-faint2 mt-0.5">No value set — showing the estimate.</p>
+                )}
+              </div>
+              <div>
+                <p className="text-[11px] text-muted mb-0.5">Est. monthly rent range</p>
+                <p className="text-sm font-semibold tnum text-ink">
+                  {est.rentRangeLow != null && est.rentRangeHigh != null
+                    ? `${fmtCurrency(est.rentRangeLow)}–${fmtCurrency(est.rentRangeHigh)}`
+                    : est.rentEstimate != null
+                    ? fmtCurrency(est.rentEstimate)
+                    : "—"}
+                </p>
+                {income <= 0 && (est.rentRangeLow != null || est.rentEstimate != null) && (
+                  <p className="text-[10px] text-faint2 mt-0.5">No rent set — showing the estimate.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* ── 2c. Location map (pin only) ───────────────────────────────────── */}
+      {/* A compact location widget (capped width on desktop, full width on
+          mobile) rather than a full-bleed banner. PropertyMap returns null if
+          the key is missing or geocoding fails, so this collapses gracefully.
+          NOTE: detail page is slated to become a user-reorderable widget grid —
+          see PARTNER_BRIEFING.md. */}
+      {(prop.address || prop.location) && (
+        <PropertyMap
+          address={prop.address ?? prop.location ?? ""}
+          lat={prop.lat}
+          lng={prop.lng}
+          className="relative w-full sm:max-w-sm h-40 rounded-2xl overflow-hidden border border-line shadow-soft"
+        />
+      )}
 
       {/* ── 2b. Action items (auto-generated from bill status) ────────────── */}
       {(() => {
@@ -990,14 +1096,14 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
 
               {/* Rentcast sync status — driven by the property's address. */}
               {prop.address?.trim() ? (
-                editLookup.loading ? (
+                estLookup.loading ? (
                   <p className="flex items-center gap-1.5 text-[11px] text-muted">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     Fetching value &amp; rent estimates from Rentcast…
                   </p>
-                ) : editLookup.data &&
-                  (editLookup.data.estimatedValue != null ||
-                    editLookup.data.rentEstimate != null) ? (
+                ) : estLookup.data &&
+                  (estLookup.data.estimatedValue != null ||
+                    estLookup.data.rentEstimate != null) ? (
                   <button
                     type="button"
                     onClick={applyEditEstimates}
@@ -1005,18 +1111,18 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
                   >
                     <Sparkles className="w-3 h-3" />
                     Apply Rentcast estimates
-                    {editLookup.data.estimatedValue != null && (
+                    {estLookup.data.estimatedValue != null && (
                       <span className="text-muted">
-                        · {fmtCurrency(Math.round(editLookup.data.estimatedValue))}
+                        · {fmtCurrency(Math.round(estLookup.data.estimatedValue))}
                       </span>
                     )}
-                    {editLookup.data.rentEstimate != null && (
+                    {estLookup.data.rentEstimate != null && (
                       <span className="text-muted">
-                        · {fmtCurrency(Math.round(editLookup.data.rentEstimate))}/mo
+                        · {fmtCurrency(Math.round(estLookup.data.rentEstimate))}/mo
                       </span>
                     )}
                   </button>
-                ) : editLookup.error ? (
+                ) : estLookup.error ? (
                   <p className="text-[11px] text-muted">
                     Couldn&apos;t reach Rentcast — edit values manually below.
                   </p>

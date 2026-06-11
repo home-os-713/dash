@@ -19,6 +19,10 @@ export type DbProperty = {
   rent: number | null;
   rent_bills: number | null;
   sort_order: number | null;
+  // Coordinates from Google Places autocomplete (migration 003) — lets the
+  // property-detail map render without a per-view Geocoding API call.
+  lat: number | null;
+  lng: number | null;
   updated_at: string;
 };
 

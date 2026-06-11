@@ -369,6 +369,32 @@ The Add-property modal had a manual "Look up value" button that (a) only fetched
 
 ---
 
+## Round 13 — App-level Rentcast cache + quota optimizations (June 2026)
+
+**Decision: cache Rentcast data at the APPLICATION level (keyed by address, shared across users), fire lookups only on a committed address, persist coordinates to skip geocoding, and surface the value/rent ranges + facts we were already fetching.**
+
+### Why
+Rentcast's free tier is 50 req/mo and each lookup costs **3 API calls** (~16 lookups/mo). For a product that's tested repeatedly against the **same small set of properties** by two collaborators, the dominant waste was re-querying the same address — especially when deleting and re-adding a property, or when each collaborator looks one up independently. The earlier `unstable_cache` (30-day, in-memory, per-deployment) helped but resets on redeploy and is invisible across the delete/re-add cycle. Jaime asked for a durable store "tied to the application as a whole, not a user."
+
+### What was built
+- **`rentcast_cache` table** (migration 003), primary key = **normalized address** (`lower(trim())`), holding all 14 Rentcast fields + `fetched_at`. RLS: any authenticated user reads + writes — it's shared *reference* data (public property estimates), not user-private. **No expiry** for now (test data; protects quota); `fetched_at` retained so a TTL / manual refresh can be added later.
+- **Route is cache-backed** (`/api/property-lookup`): prod path checks `rentcast_cache` first (hit = 0 API calls), else live-fetches and upserts. Degrades to a plain fetch if the table is missing — caching is never a hard dependency. Dev still returns the mock (local = free).
+- **Fire-on-select**: the Add modal now triggers Rentcast only when the user picks a Google autocomplete suggestion (`onSelect` commits `lookupAddr`), not on every debounced keystroke. Observed live: typing one address previously fired 3 separate lookups (= 9 API calls in prod) for partial strings. Trade-off: a manual typer who never picks a suggestion gets no auto-fill (acceptable — autocomplete is the normal path; values remain hand-editable).
+- **Coords persisted**: autocomplete's lat/lng are saved to `properties.lat/lng`; `PropertyMap` renders from them and skips a per-view Geocoding call (falls back to geocoding when absent).
+- **Show what we already fetch**: the detail page now displays a labeled "Rentcast estimate" reference strip (beds/baths/sqft/year/type + value & rent **ranges**) and falls back to the estimate range in the Est. Value card when the user hasn't entered their own value/rent. Honors the Round 5 principle (label estimates; don't pass them off as the user's own numbers).
+
+### Honesty / what to watch
+- The cache is **prod-only** (dev short-circuits to the mock), so the cache + fire-on-select behavior can't be fully exercised on localhost — verified by build + typecheck + logic, consistent with prior rounds' auth-gated constraints. The display strip *is* visible locally (it reads the mock through the route).
+- Cache writes happen server-side under the requesting user's session; RLS must allow authenticated writes (migration 003 sets this).
+- Google Maps key billing: legacy `Autocomplete` widget auto-manages session tokens and we request only Basic-Data fields (cheap path). Recommended Console guardrails: per-API daily quota caps + a billing budget alert.
+
+### Open / follow-up
+- Run `supabase/003_rentcast_cache.sql` in Supabase before prod relies on the cache.
+- Set `RENTCAST_API_KEY` + `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in Vercel.
+- Consider migrating off the deprecated `google.maps.Marker` / `places.Autocomplete` to `AdvancedMarkerElement` / `PlaceAutocompleteElement` (both work today; legacy).
+
+---
+
 **Any commit that changes product direction, repositions a feature, or makes a meaningful design/architecture decision must add a new entry here.** This is not a nice-to-have — it's how both collaborators and future Claude sessions stay aligned without re-litigating past decisions.
 
 When adding an entry:

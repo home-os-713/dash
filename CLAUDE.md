@@ -125,6 +125,7 @@ lib/
 supabase/
   001_multi_property.sql     # Run this in Supabase SQL Editor to enable multi-property
   002_sort_order.sql         # Adds sort_order column to properties for drag-to-reorder
+  003_rentcast_cache.sql     # App-level Rentcast cache table + lat/lng cols on properties
 components/
   ui/card.tsx  ui/badge.tsx  # shadcn components used by /v0 and /homeos
   ThemeToggle.tsx            # light/dark switch — rendered in every page header (defaults to light)
@@ -136,18 +137,23 @@ components/
 
 ## Database schema (Supabase project: feorwntlkwhwrsehmjmd)
 ```sql
--- Core tables (extended for multi-property)
-properties (id, user_id, name, address, location, type, prop_val, mort_pay, mort_bal, mort_orig, mort_rate, rent, rent_bills, income, occupancy, sort_order, updated_at)
+-- Core tables (extended for multi-property; lat/lng added in migration 003)
+properties (id, user_id, name, address, location, type, prop_val, mort_pay, mort_bal, mort_orig, mort_rate, rent, rent_bills, income, occupancy, sort_order, lat, lng, updated_at)
 bills (id, property_id, name, amount, due_date, paid, category, autopay, status, status_label, source)
 
 -- v0 tables (added in migration 001)
 bookings (id, property_id, platform, guest, check_in, check_out, nights, gross, platform_fee, cleaning_fee, taxes, net, status, created_at)
 utility_months (id, property_id, month, electric, water, gas, solar, budget)
 action_items (id, property_id, kind, priority, label, detail, category, due_in, amount, cta_label, created_at)
+
+-- App-level Rentcast cache (added in migration 003) — keyed by NORMALIZED address,
+-- NOT per-user/per-property. Shared across all users; survives delete/re-add of a
+-- property. RLS allows any authenticated user to read + write.
+rentcast_cache (address PK, estimated_value, price_range_low, price_range_high, rent_estimate, rent_range_low, rent_range_high, city, state, zip_code, bedrooms, bathrooms, square_footage, year_built, property_type, fetched_at)
 ```
-Row-level security is enabled — users can only access their own rows.
+Row-level security is enabled — users can only access their own rows (except `rentcast_cache`, which is shared reference data readable/writable by any authenticated user).
 **Multi-property is now supported** — unique constraint on user_id was dropped in migration 001.
-Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQL Editor before using /v0 with real data.
+Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQL Editor before using /v0 with real data. Also run `supabase/002_sort_order.sql` (drag-reorder) and `supabase/003_rentcast_cache.sql` (Rentcast cache + lat/lng).
 
 ## Auth flow
 1. User signs up → `emailRedirectTo` is set to `window.location.origin + /auth/callback` (works on both localhost and prod)
@@ -178,7 +184,9 @@ Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQ
 - **Rentcast auto-sync on add/edit (Round 12)**: typing an address in the **Add property** modal (`app/dashboard/page.tsx`) or opening the **Edit property** modal (`app/dashboard/[id]/page.tsx`) triggers a **debounced** lookup via the shared `useRentcastLookup` hook (`lib/useRentcastLookup.ts`, 700ms debounce, min 8 chars, aborts stale requests). It pre-fills **prop_val** (estimatedValue) and **income/rent** (rentEstimate), plus **location** (city, state) on add. Auto-fill never clobbers fields the user has manually edited (Add modal tracks a dirty-field set; Edit modal only fills *blank* fields automatically and offers an explicit "Apply Rentcast estimates" button to override saved values). A `Sparkles` badge marks auto-filled fields; loading shows a spinner; any failure is silent and non-blocking (manual entry still works). The Edit modal keys the lookup off the property's **stored `prop.address`** and does **not** add an address input — the address field there is owned by the parallel Maps task. `savePropEdit` now writes both `income` and `rent`.
 - **Mock data preservation**: `lib/v0/mockData.ts` must not be deleted — it powers the demo mode for users with no real properties and the /inbox and /financials pages which aren't yet wired to real data.
 - **Drag-to-reorder**: Portfolio page uses `@dnd-kit` with `rectSortingStrategy` (handles 2-column grid). Grip handle appears on hover at card top-left. Order persists to `sort_order` column in Supabase. `listUserProperties` gracefully falls back to `updated_at` ordering if `sort_order` column doesn't exist yet (migration 002 not yet run).
-- **Rentcast caching**: `/api/property-lookup` returns a dev mock in `NODE_ENV !== 'production'` to avoid burning free-tier credits during development. In production, responses are cached for 30 days via `unstable_cache`.
+- **Rentcast caching (two layers, Round 13)**: `/api/property-lookup` returns a dev mock in `NODE_ENV !== 'production'` to avoid burning free-tier credits during development. In production it is backed by an **app-level DB cache** (`rentcast_cache`, migration 003) keyed by **normalized address** — checked first; a hit means **zero** Rentcast calls. This cache is shared across all users and **survives deleting/re-adding a property** (it's keyed by address, not property id), so the same small set of test addresses is only ever fetched once. On a miss it does the live 3-endpoint fetch (also wrapped in a 30-day `unstable_cache`), then upserts the result. If the table is missing (migration not run) the route degrades to a plain live fetch — caching is an optimization, never a hard dependency. **Quota math:** free tier = 50 req/mo, each lookup = 3 calls (~16 lookups/mo).
+- **Rentcast fires on address-*select*, not per keystroke (Round 13)**: the Add-property modal only triggers a lookup when the user picks a Google autocomplete suggestion (`onSelect` → committed `lookupAddr`), not on every debounced keystroke — a partial address is a distinct, uncached key that would waste 3 calls. Manual typers who never pick a suggestion get no auto-fill (they enter values by hand). The detail page shows Rentcast value/rent **ranges** + facts (beds/baths/sqft/year/type) as a labeled reference, and falls back to the estimate when the user hasn't set their own value/rent.
+- **Property map skips geocoding when coords are stored (Round 13)**: autocomplete captures lat/lng on select → saved to `properties.lat/lng` → `PropertyMap` renders from them and skips a per-view Geocoding API call (falls back to geocoding the address if absent, e.g. manually-typed addresses).
 - **RealPropertyDetail**: Fully redesigned — equity SVG donut, mortgage progress bar, spending breakdown bars, bills list with Add bill modal, Edit property and Edit mortgage modals. All saves are optimistic (local state updated immediately, Supabase updated in background).
 - **Google Maps (Maps round)**: address autocomplete on the add-property modal (`components/AddressAutocomplete.tsx`) + a pin-only map on `/dashboard/[id]` (`components/PropertyMap.tsx`), both loading the SDK via `lib/maps.ts`. **Everything degrades gracefully** behind the `mapsConfigured` flag — no `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` ⇒ plain address input + no map, never a crash. **SSR gotcha:** `@googlemaps/js-api-loader` v2 reads `window` at module-eval time, which throws when Next prerenders the client `/dashboard` page; `lib/maps.ts` works around this by **dynamically `import()`-ing the loader inside its functions** (browser-only paths) instead of importing it at the top. Map basemap is custom-styled for light/dark via `MapTypeStyle` arrays keyed off the `.dark` class; the Places dropdown (`.pac-container`, injected into `<body>` outside React) is themed in `globals.css` and z-indexed above the modal. Pin only — no street view / default UI for v1.
 - **After every change session**: provide user a summary + localhost link to the relevant page. This is a collaboration norm.

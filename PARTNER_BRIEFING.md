@@ -60,6 +60,7 @@ npm install
 NEXT_PUBLIC_SUPABASE_URL=https://feorwntlkwhwrsehmjmd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<get from Jaime>
 RENTCAST_API_KEY=<get from Jaime or sign up free at rentcast.io>
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<get from Jaime — Google Cloud key, public/client-safe>
 
 # 4. Run locally
 npm run dev   # → http://localhost:3000
@@ -76,7 +77,8 @@ git push origin main   # → Vercel auto-deploys ✓
 
 ```sql
 properties  (id, user_id, name, address, location, type, prop_val, mort_pay, mort_bal,
-             mort_orig, mort_rate, rent, rent_bills, income, occupancy, sort_order, updated_at)
+             mort_orig, mort_rate, rent, rent_bills, income, occupancy, sort_order,
+             lat, lng, updated_at)
 bills       (id, property_id, name, amount, due_date, paid, category, autopay,
              status, status_label, source)
 bookings    (id, property_id, platform, guest, check_in, check_out, nights,
@@ -84,6 +86,11 @@ bookings    (id, property_id, platform, guest, check_in, check_out, nights,
 utility_months (id, property_id, month, electric, water, gas, solar, budget)
 action_items   (id, property_id, kind, priority, label, detail, category,
                 due_in, amount, cta_label, created_at)
+-- App-level Rentcast cache (migration 003), keyed by normalized address. Shared
+-- across all users; survives delete/re-add of a property. NOT user-private.
+rentcast_cache (address PK, estimated_value, price_range_low, price_range_high,
+                rent_estimate, rent_range_low, rent_range_high, city, state, zip_code,
+                bedrooms, bathrooms, square_footage, year_built, property_type, fetched_at)
 ```
 
 Multi-property is live — users can add as many properties as they want.
@@ -92,6 +99,7 @@ Multi-property is live — users can add as many properties as they want.
 |---|---|---|
 | `supabase/001_multi_property.sql` | ✅ Applied | Multi-property schema, RLS policies |
 | `supabase/002_sort_order.sql` | ⚠️ Run when ready | Adds `sort_order` to `properties` for drag-to-reorder persistence |
+| `supabase/003_rentcast_cache.sql` | ⛔ **MUST RUN** | App-level `rentcast_cache` table + `lat`/`lng` cols on `properties`. **Adding a property writes lat/lng, so property creation FAILS until this is applied** (shared DB → affects local + prod). |
 
 ---
 
@@ -112,7 +120,11 @@ Preview URLs use the same Supabase DB as production — data you create on a pre
 - ✅ Multi-property DB schema (migration 001 applied)
 - ✅ `/dashboard` loads real properties from Supabase
 - ✅ Add property modal with Rentcast address lookup (requires `RENTCAST_API_KEY`)
-- ✅ Rentcast response cached 30 days in production; dev mock in local to avoid burning free tier
+- ✅ **Google Places address autocomplete** on the add-property modal + **pin map** on property detail (requires `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`; degrades gracefully without it)
+- ✅ **App-level Rentcast cache** (`rentcast_cache`, migration 003) — keyed by normalized address, shared across users, survives delete/re-add of a property → repeat lookups cost **0 API calls**. Dev mock in local to avoid burning free tier (50 req/mo, 3 calls each)
+- ✅ **Rentcast auto-fill fires on address-*select*** (not per keystroke) to conserve quota; auto-fills value + rent + location, never clobbers manual edits
+- ✅ **Rentcast estimate display** on property detail — beds/baths/sqft/year/type + value & rent **ranges**, shown as a labeled reference and as a fallback when the user hasn't entered their own value/rent
+- ✅ Coordinates from autocomplete saved to `properties.lat/lng` → map skips per-view geocoding
 - ✅ Property detail (`/dashboard/[id]`) loads real data from Supabase
 - ✅ **Edit property details modal** — name, address, location, type, value, income
 - ✅ **Edit mortgage modal** — balance, original amount, monthly payment, rate
@@ -123,10 +135,11 @@ Preview URLs use the same Supabase DB as production — data you create on a pre
 - ✅ Legacy pages moved to `/legacy/*`, main nav cleaned up
 
 ### Open — next logical steps (in order)
-1. **Run migration 002** — `supabase/002_sort_order.sql` to persist drag-to-reorder order across sessions.
-2. **Email parsing for bill ingestion** — Gmail OAuth + Claude API extraction → writes to `bills` table. Highest-value integration (replaces manual bill entry).
-3. **Bookings + utility data ingestion** — currently mock on the detail page. Needs Airbnb/VRBO sync or manual entry.
-4. **Decommission `/legacy/*`** — once `/dashboard` is validated with real data, delete the legacy pages.
+1. **⛔ Run migration 003** — `supabase/003_rentcast_cache.sql`. Required before adding properties (writes `lat`/`lng`) and before the Rentcast cache works. Also run migration 002 if not yet applied.
+2. **Reorderable detail-view widget grid (NEW — follow-up idea from Jaime, 2026-06-09):** turn `/dashboard/[id]` into a grid of widgets (KPIs, Rentcast estimate, location map, equity, mortgage, bills, spending, financial summary) that the **user can drag to reorder to their preference** — like the portfolio page already does with `@dnd-kit`. The location map is currently a small fixed widget pending this. Would let owners surface what matters most to them per property. Scope: persist a `widget_order` (per user or per property) similar to `sort_order`.
+3. **Email parsing for bill ingestion** — Gmail OAuth + Claude API extraction → writes to `bills` table. Highest-value integration (replaces manual bill entry).
+4. **Bookings + utility data ingestion** — currently mock on the detail page. Needs Airbnb/VRBO sync or manual entry.
+5. **Decommission `/legacy/*`** — once `/dashboard` is validated with real data, delete the legacy pages.
 
 ### Roadmap (further out)
 - Google / Apple Sign-In via Supabase OAuth

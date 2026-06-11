@@ -235,8 +235,17 @@ export default function PortfolioPage() {
   // Tracks which fields the latest Rentcast lookup auto-filled (for the UI hint).
   const [autofilled, setAutofilled] = useState<Set<keyof PropertyForm>>(new Set());
 
-  // Debounced Rentcast lookup driven by the address field, only while modal open.
-  const lookup = useRentcastLookup(form.address, showAddModal);
+  // Coordinates captured when the user picks an autocomplete suggestion — saved
+  // on the property so the detail-page map skips a per-view Geocoding call.
+  const [coords, setCoords] = useState<{ lat: number | null; lng: number | null }>(
+    { lat: null, lng: null }
+  );
+
+  // The Rentcast lookup fires only on a *committed* address (picked from the
+  // autocomplete dropdown, set in onSelect) — not on every keystroke. A partial
+  // address is a distinct, uncached key that would burn 3 API calls for nothing.
+  const [lookupAddr, setLookupAddr] = useState("");
+  const lookup = useRentcastLookup(lookupAddr, showAddModal);
 
   // dnd-kit sensors: require 8px movement before starting drag (prevents accidental drags on tap)
   const sensors = useSensors(
@@ -350,6 +359,14 @@ export default function PortfolioPage() {
     setAutofilled(filled);
   }, [lookup.data]);
 
+  // Default the property name to the address as it gets filled in (whether picked
+  // from autocomplete or typed) — but only until the user types their own name,
+  // at which point `name` is marked dirty and we leave it alone.
+  useEffect(() => {
+    if (dirtyFields.current.has("name")) return;
+    setForm((f) => (f.name === f.address ? f : { ...f, name: f.address }));
+  }, [form.address]);
+
   async function handleSaveProperty() {
     if (!form.name.trim() || !form.address.trim()) {
       setSaveError("Name and address are required.");
@@ -373,11 +390,15 @@ export default function PortfolioPage() {
         rent: form.income ? Number(form.income) : null,
         rent_bills: null,
         sort_order: dbProperties.length, // append at end
+        lat: coords.lat,
+        lng: coords.lng,
       });
       setDbProperties((prev) => [...prev, { ...created, bills: [] }]);
       setForm(emptyForm);
       dirtyFields.current = new Set();
       setAutofilled(new Set());
+      setCoords({ lat: null, lng: null });
+      setLookupAddr("");
       setShowAddModal(false);
     } catch (e: unknown) {
       setSaveError(e instanceof Error ? e.message : "Save failed.");
@@ -524,6 +545,8 @@ export default function PortfolioPage() {
               setForm(emptyForm);
               dirtyFields.current = new Set();
               setAutofilled(new Set());
+              setCoords({ lat: null, lng: null });
+              setLookupAddr("");
               setSaveError("");
               setShowAddModal(true);
             }}
@@ -695,6 +718,10 @@ export default function PortfolioPage() {
                   value={form.address}
                   onChange={(v) => setField("address", v)}
                   onSelect={(sel) => {
+                    // Commit the picked address → triggers the Rentcast lookup
+                    // once (see lookupAddr), and capture coords for the map.
+                    setLookupAddr(sel.address);
+                    setCoords({ lat: sel.lat, lng: sel.lng });
                     // Auto-fill "City, ST" from the picked place when the user
                     // hasn't already typed a location of their own.
                     if (sel.location && !form.location.trim()) {
