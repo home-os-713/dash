@@ -16,6 +16,7 @@ import {
   Loader2,
   GripVertical,
   Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import { useRentcastLookup } from "@/lib/useRentcastLookup";
 import {
@@ -422,6 +423,13 @@ export default function PortfolioPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/analytics"
+              className="flex items-center gap-2 text-muted hover:text-ink text-sm bg-tint/[0.025] border border-line rounded-xl px-3 py-2 transition-colors"
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </Link>
             <Link
               href="/dashboard/inbox"
               className="flex items-center gap-2 text-muted hover:text-ink text-sm bg-tint/[0.025] border border-line rounded-xl px-3 py-2 transition-colors"

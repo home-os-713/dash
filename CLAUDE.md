@@ -92,6 +92,7 @@ The app is fully live: sign-up → email confirmation → dashboard → edit val
 - **Tailwind CSS v4** + **shadcn/ui** + **recharts** + **lucide-react** — used in `/dashboard` (main product)
 - **Fraunces** (display serif) + **Inter** (UI/body sans) via `next/font/google` — loaded in `app/layout.tsx`, mapped onto Tailwind's `font-serif`/`font-sans` tokens in `globals.css` `@theme`. `font-serif` → Fraunces, default body + `font-sans` → Inter. (Round 10)
 - **@dnd-kit/core** + **@dnd-kit/sortable** + **@dnd-kit/utilities** — drag-to-reorder on portfolio page
+- **@anthropic-ai/sdk** — Claude API client, used server-only in `app/api/insights/route.ts` to generate portfolio commentary. Requires `ANTHROPIC_API_KEY` (server-only). **Degrades gracefully**: with no key the route returns deterministic rule-based insights computed from the same real numbers — no fake AI, no crash. (Analytics round)
 - **@googlemaps/js-api-loader** (+ `@types/google.maps` dev dep) — loads the Google Maps JS SDK client-side for address autocomplete (Places) on the add-property modal and the pin map on `/dashboard/[id]`. Uses the v2 functional API (`setOptions` + `importLibrary`), dynamically imported inside `lib/maps.ts` so it never touches `window` during SSR. Requires `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — degrades gracefully (plain input / hidden map) when absent. (Maps round)
 
 ## Project structure
@@ -102,6 +103,7 @@ app/
   dashboard/[id]/financials/page.tsx
   dashboard/[id]/bookings/page.tsx
   dashboard/inbox/page.tsx
+  dashboard/analytics/page.tsx   # Portfolio analytics — Owner/Investor toggle, projections, recharts, AI insights (Analytics round)
   legacy/dashboard/page.tsx      # Original single-property dashboard — kept for reference only
   legacy/homeos/page.tsx         # Partner's prototype page — kept for reference only
   login/page.tsx
@@ -109,6 +111,7 @@ app/
   auth/callback/             # Handles Supabase email confirmation code exchange
   api/
     property-lookup/route.ts # Rentcast API proxy — fetches estimated property value + long-term rent by address
+    insights/route.ts        # Portfolio insights — Claude (Anthropic SDK) when ANTHROPIC_API_KEY set, else rule-based fallback (Analytics round)
     globals.css              # All styles for /dashboard — DO NOT refactor to Tailwind
 proxy.ts                     # Auth guard (Next.js 16: proxy.ts, export proxy, not middleware)
 lib/
@@ -117,6 +120,8 @@ lib/
   v0/
     mockData.ts              # All mock data + helpers for /v0 demo mode — DO NOT delete
     db.ts                    # DbProperty, DbBill types + Supabase query helpers for /v0
+    analytics.ts             # Pure portfolio metrics + projection engine (cap rate, CoC, NOI, GRM, DSCR, equity buildup) — shared by /dashboard/analytics AND /api/insights (Analytics round)
+    insights.ts              # Insight types + deterministic rule-based generator (the no-key fallback + client-side fallback) (Analytics round)
   utils.ts                   # cn() helper for Tailwind class merging
   maps.ts                    # Google Maps SDK loader (client-only, graceful-degrade) — used by AddressAutocomplete + PropertyMap
   supabase/
@@ -189,6 +194,7 @@ Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQ
 - **Property map skips geocoding when coords are stored (Round 13)**: autocomplete captures lat/lng on select → saved to `properties.lat/lng` → `PropertyMap` renders from them and skips a per-view Geocoding API call (falls back to geocoding the address if absent, e.g. manually-typed addresses).
 - **RealPropertyDetail**: Fully redesigned — equity SVG donut, mortgage progress bar, spending breakdown bars, bills list with Add bill modal, Edit property and Edit mortgage modals. All saves are optimistic (local state updated immediately, Supabase updated in background).
 - **Google Maps (Maps round)**: address autocomplete on the add-property modal (`components/AddressAutocomplete.tsx`) + a pin-only map on `/dashboard/[id]` (`components/PropertyMap.tsx`), both loading the SDK via `lib/maps.ts`. **Everything degrades gracefully** behind the `mapsConfigured` flag — no `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` ⇒ plain address input + no map, never a crash. **SSR gotcha:** `@googlemaps/js-api-loader` v2 reads `window` at module-eval time, which throws when Next prerenders the client `/dashboard` page; `lib/maps.ts` works around this by **dynamically `import()`-ing the loader inside its functions** (browser-only paths) instead of importing it at the top. Map basemap is custom-styled for light/dark via `MapTypeStyle` arrays keyed off the `.dark` class; the Places dropdown (`.pac-container`, injected into `<body>` outside React) is themed in `globals.css` and z-indexed above the modal. Pin only — no street view / default UI for v1.
+- **Analytics & insights (Analytics round)**: `/dashboard/analytics` is a portfolio-level page with an **Owner ↔ Investor** view toggle (persisted to `localStorage` under `homeos.analytics.view`) and **user-adjustable, labeled projection assumptions** (appreciation/rent-growth/expense-growth/holding-period, persisted under `homeos.analytics.assumptions`). The math lives in **`lib/v0/analytics.ts`** — pure functions, no React/Supabase imports — so the page and `/api/insights` compute from ONE source of truth (the AI can never cite a figure the UI didn't also derive). Every value is labeled **actual** (from stored data) or **projected** (modeled). Charts are recharts (equity-buildup area, value-vs-debt line, cash-flow bars with the year-0 actual bar distinguished, equity-composition donut). **Multi-unit roll-up**: schema has no `units` column, so unit count is **inferred from the `type` string** (e.g. "Triplex"→3, "4-plex"→4, else 1) — documented assumption. **Cash-on-cash uses current equity as the capital base** (original cash invested isn't stored) — labeled in the UI. **AI insights graceful degradation**: `/api/insights` calls Claude (`@anthropic-ai/sdk`, model `claude-haiku-4-5`, prompt-cached system prompt) only when `ANTHROPIC_API_KEY` is set; otherwise (and on any API error, and on client-side fetch failure) it returns the deterministic rule-based insights from `lib/v0/insights.ts`. The response shape (`{source, headline, insights[]}`) is identical either way → adding the key is a zero-UI-change upgrade. When no real properties exist the page drives the same engine off the mock portfolio, tagged "Simulated demo data".
 - **After every change session**: provide user a summary + localhost link to the relevant page. This is a collaboration norm.
 
 ## Environment variables
@@ -197,9 +203,11 @@ NEXT_PUBLIC_SUPABASE_URL=https://feorwntlkwhwrsehmjmd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<get from Supabase dashboard → Settings → API → anon public>
 RENTCAST_API_KEY=<get from https://app.rentcast.io → API Keys; free tier = 50 req/mo>
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<get from Google Cloud Console → APIs & Services → Credentials>
+ANTHROPIC_API_KEY=<OPTIONAL — get from https://console.anthropic.com → API Keys; powers AI insights on /dashboard/analytics>
 ```
 Never commit `.env.local`. Set all in Vercel → Project → Settings → Environment Variables.
 `RENTCAST_API_KEY` is server-only (no `NEXT_PUBLIC_` prefix) — kept out of client bundles.
+`ANTHROPIC_API_KEY` is **server-only and optional**. It powers the AI narrative on `/dashboard/analytics` via `/api/insights` (model `claude-haiku-4-5`). **Without it the analytics page still works fully** — `/api/insights` returns deterministic rule-based insights computed from the same real metrics. Adding the key upgrades insight quality with zero UI change. Set it in `.env.local` (local) and Vercel (prod) to enable live AI.
 `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is **public/client-safe by design** (the Maps JS SDK runs in the browser). It powers Places address autocomplete on the add-property modal and the pin map on `/dashboard/[id]`. **Restrict it in Google Cloud Console** to HTTP referrers `localhost:3000` + `homeowner-dashboard-woad.vercel.app` and to the **Maps JavaScript API**, **Places API**, and **Geocoding API**. If unset, address autocomplete falls back to a plain input and the map is hidden — the app never crashes.
 
 ## Running locally
