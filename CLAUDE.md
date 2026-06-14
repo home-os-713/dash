@@ -93,6 +93,7 @@ The app is fully live: sign-up → email confirmation → dashboard → edit val
 - **Fraunces** (display serif) + **Inter** (UI/body sans) via `next/font/google` — loaded in `app/layout.tsx`, mapped onto Tailwind's `font-serif`/`font-sans` tokens in `globals.css` `@theme`. `font-serif` → Fraunces, default body + `font-sans` → Inter. (Round 10)
 - **@dnd-kit/core** + **@dnd-kit/sortable** + **@dnd-kit/utilities** — drag-to-reorder on portfolio page
 - **@googlemaps/js-api-loader** (+ `@types/google.maps` dev dep) — loads the Google Maps JS SDK client-side for address autocomplete (Places) on the add-property modal and the pin map on `/dashboard/[id]`. Uses the v2 functional API (`setOptions` + `importLibrary`), dynamically imported inside `lib/maps.ts` so it never touches `window` during SSR. Requires `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — degrades gracefully (plain input / hidden map) when absent. (Maps round)
+- **@anthropic-ai/sdk** — powers the AI "Ask your portfolio" assistant (`/dashboard/assistant` + `app/api/assistant/route.ts`). Model `claude-opus-4-8` (override with `ASSISTANT_MODEL`, e.g. `claude-haiku-4-5` for cheap), adaptive thinking, streaming SSE, prompt caching of the portfolio/system context. Requires `ANTHROPIC_API_KEY` (server-only) — degrades gracefully to a "connect AI" state when absent, never fabricates answers. (AI Experience round)
 
 ## Project structure
 ```
@@ -102,6 +103,7 @@ app/
   dashboard/[id]/financials/page.tsx
   dashboard/[id]/bookings/page.tsx
   dashboard/inbox/page.tsx
+  dashboard/assistant/page.tsx   # AI "Ask your portfolio" chat — grounded in real Supabase data; graceful no-key state
   legacy/dashboard/page.tsx      # Original single-property dashboard — kept for reference only
   legacy/homeos/page.tsx         # Partner's prototype page — kept for reference only
   login/page.tsx
@@ -109,6 +111,7 @@ app/
   auth/callback/             # Handles Supabase email confirmation code exchange
   api/
     property-lookup/route.ts # Rentcast API proxy — fetches estimated property value + long-term rent by address
+    assistant/route.ts       # AI assistant — Anthropic SDK, streams grounded answers from real portfolio; GET = status probe
     globals.css              # All styles for /dashboard — DO NOT refactor to Tailwind
 proxy.ts                     # Auth guard (Next.js 16: proxy.ts, export proxy, not middleware)
 lib/
@@ -117,6 +120,7 @@ lib/
   v0/
     mockData.ts              # All mock data + helpers for /v0 demo mode — DO NOT delete
     db.ts                    # DbProperty, DbBill types + Supabase query helpers for /v0
+    portfolioContext.ts      # Builds the deterministic portfolio snapshot fed to the AI assistant + example questions
   utils.ts                   # cn() helper for Tailwind class merging
   maps.ts                    # Google Maps SDK loader (client-only, graceful-degrade) — used by AddressAutocomplete + PropertyMap
   supabase/
@@ -189,6 +193,7 @@ Migration SQL is at `supabase/001_multi_property.sql` — run in Supabase → SQ
 - **Property map skips geocoding when coords are stored (Round 13)**: autocomplete captures lat/lng on select → saved to `properties.lat/lng` → `PropertyMap` renders from them and skips a per-view Geocoding API call (falls back to geocoding the address if absent, e.g. manually-typed addresses).
 - **RealPropertyDetail**: Fully redesigned — equity SVG donut, mortgage progress bar, spending breakdown bars, bills list with Add bill modal, Edit property and Edit mortgage modals. All saves are optimistic (local state updated immediately, Supabase updated in background).
 - **Google Maps (Maps round)**: address autocomplete on the add-property modal (`components/AddressAutocomplete.tsx`) + a pin-only map on `/dashboard/[id]` (`components/PropertyMap.tsx`), both loading the SDK via `lib/maps.ts`. **Everything degrades gracefully** behind the `mapsConfigured` flag — no `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` ⇒ plain address input + no map, never a crash. **SSR gotcha:** `@googlemaps/js-api-loader` v2 reads `window` at module-eval time, which throws when Next prerenders the client `/dashboard` page; `lib/maps.ts` works around this by **dynamically `import()`-ing the loader inside its functions** (browser-only paths) instead of importing it at the top. Map basemap is custom-styled for light/dark via `MapTypeStyle` arrays keyed off the `.dark` class; the Places dropdown (`.pac-container`, injected into `<body>` outside React) is themed in `globals.css` and z-indexed above the modal. Pin only — no street view / default UI for v1.
+- **AI "Ask your portfolio" assistant (AI Experience round)**: `/dashboard/assistant` is a chat surface where the user asks natural-language questions about their **real** Supabase properties/finances and Claude answers grounded in that data. Architecture: `app/api/assistant/route.ts` loads the portfolio **server-side** under the requesting user's session (RLS-scoped — the client can't spoof the numbers), serializes it via `buildPortfolioSnapshot` (`lib/v0/portfolioContext.ts`) into a **deterministic** JSON snapshot (stable key order, no timestamps → caches cleanly), and passes it as a **prompt-cached** system prefix (`cache_control: ephemeral`) with the per-turn question in `messages[]` after the prefix. Model `claude-opus-4-8` + adaptive thinking, streamed as SSE. **Honesty rules in the system prompt**: answer only from the snapshot, cite the numbers used, never invent figures, say so when the data can't answer. **Optional agentic touch**: the model may emit a single ```proposal fenced-JSON block (e.g. enable autopay) which the UI renders as an **Approve** card — **proposal only, v1 never executes** (the Approve button is intentionally inert + labeled). **Graceful degradation**: no `ANTHROPIC_API_KEY` ⇒ `GET /api/assistant` returns `{enabled:false}` and the page shows a clean "connect AI" state with example questions; `POST` returns `503 {disabled:true}` — never crashes, never fakes an answer. No properties ⇒ `422 {empty:true}`. Set `ASSISTANT_MODEL=claude-haiku-4-5` to run it cheap. The exploration/decision writeup is at `docs/AI_EXPERIENCE_EXPLORATION.md`.
 - **After every change session**: provide user a summary + localhost link to the relevant page. This is a collaboration norm.
 
 ## Environment variables
@@ -197,8 +202,11 @@ NEXT_PUBLIC_SUPABASE_URL=https://feorwntlkwhwrsehmjmd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<get from Supabase dashboard → Settings → API → anon public>
 RENTCAST_API_KEY=<get from https://app.rentcast.io → API Keys; free tier = 50 req/mo>
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<get from Google Cloud Console → APIs & Services → Credentials>
+ANTHROPIC_API_KEY=<get from https://console.anthropic.com → API Keys; powers the AI assistant>
+ASSISTANT_MODEL=<optional; defaults to claude-opus-4-8. Set to claude-haiku-4-5 for cheaper Q&A>
 ```
 Never commit `.env.local`. Set all in Vercel → Project → Settings → Environment Variables.
+`ANTHROPIC_API_KEY` is **server-only** (no `NEXT_PUBLIC_` prefix) — kept out of client bundles. Without it the AI assistant shows a clean "connect AI" disabled state and never crashes.
 `RENTCAST_API_KEY` is server-only (no `NEXT_PUBLIC_` prefix) — kept out of client bundles.
 `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is **public/client-safe by design** (the Maps JS SDK runs in the browser). It powers Places address autocomplete on the add-property modal and the pin map on `/dashboard/[id]`. **Restrict it in Google Cloud Console** to HTTP referrers `localhost:3000` + `homeowner-dashboard-woad.vercel.app` and to the **Maps JavaScript API**, **Places API**, and **Geocoding API**. If unset, address autocomplete falls back to a plain input and the map is hidden — the app never crashes.
 
