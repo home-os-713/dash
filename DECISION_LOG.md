@@ -395,6 +395,41 @@ Rentcast's free tier is 50 req/mo and each lookup costs **3 API calls** (~16 loo
 
 ---
 
+## Round 14 — Analytics & investment intelligence (Project 1, June 2026)
+
+> Dispatched as a parallel "product engineer" workstream alongside the AI-experience
+> workstream (which also self-numbered Round 14 on its own branch — renumber one to 15 at merge).
+
+**Decision: add a portfolio-level analytics page that turns HomeOS from a bill tracker into an investment-intelligence tool — dual-audience (simple owner ↔ pro investor), projections driven by REAL data with clearly-labeled adjustable assumptions, and AI narrative insights that degrade to deterministic rules without a key.**
+
+### Why
+The roadmap calls for moving beyond the 2–5-property "mom-and-pop" owner toward established investors/developers who need ROI, cap rate, and projections to make decisions. But the simple owner shouldn't be drowned in pro metrics. Jaime chose a **two-view toggle** (not one-size-fits-all) and **real data + labeled assumptions** (not mock, not unlabeled projections) — consistent with the Round 4/5 honesty principle (never show a number the user can't trace).
+
+### What was built
+- **`/dashboard/analytics`** — portfolio page, linked from the dashboard. **Owner ↔ Investor** toggle persisted to `localStorage` (`homeos.analytics.view`).
+  - Owner view: portfolio value, equity, monthly cash flow, simple ROI, occupancy — few numbers, big visuals.
+  - Investor view: cap rate, cash-on-cash, NOI, GRM, DSCR, equity buildup, appreciation projection, blended return.
+- **Projection engine** over real Supabase + Rentcast values with **user-adjustable, labeled assumptions** (appreciation %, rent growth %, expense growth %, holding period), persisted under `homeos.analytics.assumptions`. Every figure tagged **actual** vs **projected**.
+- **`lib/v0/analytics.ts`** — pure metric + projection functions (no React/Supabase) so the page and `/api/insights` compute from ONE source of truth. recharts visuals: equity-buildup area, value-vs-debt line, cash-flow bars, equity-composition donut.
+- **AI narrative insights** — `/api/insights` calls Claude (`@anthropic-ai/sdk`, `claude-haiku-4-5`, prompt-cached system prompt) when `ANTHROPIC_API_KEY` is set; otherwise (and on any error / client-fetch failure) returns deterministic **rule-based** insights from `lib/v0/insights.ts`. Identical `{source, headline, insights[]}` shape → adding the key is a zero-UI-change upgrade. Insights panel labels the source ("AI-generated" vs "Rule-based").
+- No real properties ⇒ the same engine runs on the mock portfolio, tagged "Simulated demo data".
+
+### Documented assumptions / honesty
+- **Multi-unit roll-up**: schema has no `units` column → unit count inferred from the `type` string ("Triplex"→3, "4-plex"→4, else 1). Documented, not hidden.
+- **Cash-on-cash** uses current equity as the capital base (original cash invested isn't stored) — labeled in the UI.
+- AI is forbidden from citing any figure the engine didn't compute; never fabricates numbers.
+
+### Honesty / what to watch
+- Built autonomously by a dispatched agent that **hit a session limit mid-run** — the feature code was complete and `npm run build` passes green, but the agent was cut off before committing/finishing docs; the coordination session committed the WIP and finished docs (this round + PARTNER_BRIEFING + done summary). UI is auth-gated; verified by build + typecheck + inspection, not headless screenshot (same constraint as Rounds 9–13).
+- **Needs a human:** set `ANTHROPIC_API_KEY` in `.env.local` (+ Vercel) to enable live AI insights — optional; rule-based works without it.
+
+### Open / follow-up
+- Renumber this vs the AI-experience branch's Round 14 when the second branch merges.
+- Consider a per-property analytics drill (this round is portfolio-level).
+- Wire free macro data (FRED rates, Census/HUD rents) to ground projection defaults — overlaps the AI-experience exploration doc's recommendation.
+
+---
+
 **Any commit that changes product direction, repositions a feature, or makes a meaningful design/architecture decision must add a new entry here.** This is not a nice-to-have — it's how both collaborators and future Claude sessions stay aligned without re-litigating past decisions.
 
 When adding an entry:

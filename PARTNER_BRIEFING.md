@@ -19,6 +19,7 @@ A property management web app for STR hosts. Users sign up, add their properties
 | **`/dashboard/inbox`** | Cross-property action hub — urgent items, already-handled receipts, AI-parsed emails (currently mock). |
 | **`/dashboard/[id]/financials`** | P&L drill-down — categorized expenses, mortgage detail, equity. |
 | **`/dashboard/[id]/bookings`** | Per-stay economics — gross → fees → taxes → net, bar chart. |
+| **`/dashboard/analytics`** | **Investment intelligence.** Portfolio-level analytics with an Owner ↔ Investor view toggle, real-data projections (adjustable, labeled assumptions), recharts visuals, and AI narrative insights (rule-based without a key, Claude with `ANTHROPIC_API_KEY`). Linked from the dashboard. |
 | **`/legacy/dashboard`** | Old single-property dashboard. Real Supabase data, vanilla CSS. Kept for reference — not linked from the main app. |
 | **`/legacy/homeos`** | Original partner design prototype. Mock data, Tailwind + recharts. Kept for reference — not linked from the main app. |
 
@@ -37,6 +38,7 @@ Both legacy pages are accessible by URL but intentionally buried. Do not delete 
 | **Charts** | recharts | AreaChart (utility spend), BarChart (bookings) |
 | **Icons** | lucide-react | Throughout `/dashboard` |
 | **Drag-and-drop** | @dnd-kit/core + @dnd-kit/sortable | Portfolio page property reordering |
+| **AI** | @anthropic-ai/sdk | Server-only, powers AI insights on `/dashboard/analytics`. Optional `ANTHROPIC_API_KEY` — degrades to rule-based without it |
 | **Legacy styling** | Vanilla CSS (`globals.css`) | Used in `/legacy/dashboard` only — do not touch |
 
 ---
@@ -133,6 +135,7 @@ Preview URLs use the same Supabase DB as production — data you create on a pre
 - ✅ Demo mode — falls back to mock data when user has no real properties
 - ✅ **Drag-to-reorder properties** on portfolio page — grip handle top-left of each card, 2-column grid preserved, persists to `sort_order` in Supabase (requires migration 002)
 - ✅ Legacy pages moved to `/legacy/*`, main nav cleaned up
+- ✅ **Analytics / investment intelligence** (`/dashboard/analytics`, branch `feature/analytics`) — Owner ↔ Investor toggle, real-data projections with adjustable labeled assumptions, recharts visuals, AI narrative insights (rule-based without a key, Claude with `ANTHROPIC_API_KEY`). Built by a dispatched product-engineer session
 
 ### Open — next logical steps (in order)
 1. **⛔ Run migration 003** — `supabase/003_rentcast_cache.sql`. Required before adding properties (writes `lat`/`lng`) and before the Rentcast cache works. Also run migration 002 if not yet applied.
