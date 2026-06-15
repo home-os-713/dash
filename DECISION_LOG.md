@@ -427,6 +427,39 @@ The roadmap calls for moving beyond the 2–5-property "mom-and-pop" owner towar
 - Renumber this vs the AI-experience branch's Round 14 when the second branch merges.
 - Consider a per-property analytics drill (this round is portfolio-level).
 - Wire free macro data (FRED rates, Census/HUD rents) to ground projection defaults — overlaps the AI-experience exploration doc's recommendation.
+## Round 15 — AI "Ask your portfolio" experience + lean OOTB-data exploration (June 2026)
+
+**Decision: prove AI value with a lean, ~free "Ask your portfolio" chat (only `ANTHROPIC_API_KEY`, no paid data API), and chart a staged path for the data integrations we pay for only when we scale.** Built on branch `explore/ai-experience` (P2 / AI Experience workstream — not yet merged to main).
+
+### Why this direction
+The brief was to take HomeOS "to the next level" with an AI-driven, out-of-the-box-feeling experience — leanly. Three AI shapes were evaluated (full analysis in `docs/AI_EXPERIENCE_EXPLORATION.md`):
+- **A. Ask-your-portfolio chat** — lean (no paid data API), decoupled from Project 1's read-only analytics, directly answers the questions the Decision Log says users actually have ("which property nets what?", "what am I forgetting?").
+- **B. Predictive projections** — strong, but the math is deterministic (doesn't need AI) and the honest version needs FRED wired first. Phase 2; overlaps Project 1's lane.
+- **C. Agentic "approve & do it"** — the autopilot vision from Rounds 3–5, but Round 4 ("I'm confused") + Round 5 (killed the savings hero) warn hard against acting on un-trusted/mock data. **Built the proposal half only — Claude may propose, the UI shows an Approve card, nothing executes in v1.**
+
+Chose **A + proposal-only C** for v1. It's the only direction that proves AI value *today* with zero paid commitment, and it honors the standing principles: *simpler + honest beats aspirational* (R5), *cite/label real numbers* (R4–5), *don't execute on mock data* (R4).
+
+### What was built (the POC)
+- `app/dashboard/assistant/page.tsx` — chat surface with a "grounded in" context strip (shows which real numbers ground the answers), streaming, proposal Approve cards (inert in v1), and a clean **"connect AI"** disabled state + example questions when no key.
+- `app/api/assistant/route.ts` — Anthropic SDK (`claude-opus-4-8`, adaptive thinking, streaming SSE). Loads the portfolio **server-side** under the user's session (RLS-scoped — client can't spoof numbers) and passes it as a **prompt-cached** system prefix; per-turn question follows in `messages[]`. `GET` = status probe.
+- `lib/v0/portfolioContext.ts` — deterministic snapshot builder (stable key order, no timestamps → caches cleanly) + grounded example questions.
+- **Honesty guarantees** in the system prompt: answer only from the snapshot, cite the numbers used, never invent figures, propose-but-never-execute.
+- **Graceful degradation**: no `ANTHROPIC_API_KEY` ⇒ disabled state (never crashes, never fabricates); no properties ⇒ `422 {empty}`.
+
+### Lean v1 now → staged "pay when we scale" (researched live, June 2026)
+- **Now (free):** the assistant (only `ANTHROPIC_API_KEY`; run `claude-haiku-4-5` via `ASSISTANT_MODEL` for cheap).
+- **Next (still free): FRED** (`MORTGAGE30US` + home-price index — benchmark each mortgage against the live ~6.5% market; $0 forever, 120 req/min). Then **US Census ACS** (neighborhood rent/value context; free key).
+- **Pay when scaling:** **Plaid production** (real mortgage/expense auto-population — sandbox free now, per-Item subscription at scale; build against sandbox so the switch is a config change) is the first paid line item. **ATTOM** (authoritative tax/AVM, ~$95/mo+) only if RentCast + heuristics fall short. Insurance ≈ heuristic (% of value), no good free API.
+
+### Tie-back to positioning
+The wedge stays *bill aggregation + payment status by property* (R5). The assistant **serves** that wedge — it's the natural-language way to interrogate the bill/finance data the dashboard already centralizes — and re-introduces the Round-3 "approve & do it" energy **honestly** (proposal-only, real data, cited numbers). AI is a feature that sharpens the wedge, not a new headline.
+
+### Verification / honesty notes
+- `npm run build` passes (Next.js 16 / Turbopack) **with `.env.local` present**. Note: the worktree had no `.env.local`, so the build initially failed prerendering `/dashboard` with "Supabase URL and API key required" — a **pre-existing env issue, not a code defect** (same constraint as the Maps/Rentcast rounds). Verified green by copying the gitignored `.env.local` from the main worktree, building, then removing it. New routes compiled: `/api/assistant` (dynamic) + `/dashboard/assistant` (static).
+- UI is auth-gated; not headlessly screenshot-verified (same constraint noted in Rounds 9–13). The no-key disabled path, SSE parsing, and proposal extraction were verified by build + typecheck + inspection.
+- Human follow-ups: set `ANTHROPIC_API_KEY` in `.env.local` (+ Vercel) to turn the assistant on; optionally `ASSISTANT_MODEL=claude-haiku-4-5`. To go further: grab a free **FRED** API key.
+
+> **Merge note:** Rounds 14 (analytics) and 15 (this) were built as parallel dispatched workstreams; both originally self-numbered "Round 14" on their own branches and were reconciled to 14/15 when merged into `feature/intelligence`.
 
 ---
 

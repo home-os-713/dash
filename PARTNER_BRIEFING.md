@@ -17,6 +17,7 @@ A property management web app for STR hosts. Users sign up, add their properties
 | **`/dashboard`** | **Main product.** Portfolio overview — real properties from Supabase, falls back to demo data when none exist. Multi-property. Add property modal with address lookup. |
 | **`/dashboard/[id]`** | Property detail — bills, financial summary, utility chart, bookings preview. UUID IDs load real data; demo slugs ("phoenix", "pvr") load mock. |
 | **`/dashboard/inbox`** | Cross-property action hub — urgent items, already-handled receipts, AI-parsed emails (currently mock). |
+| **`/dashboard/assistant`** | **AI "Ask your portfolio" chat.** Natural-language questions about your real properties/finances; Claude answers grounded in your Supabase data and cites the numbers used. Requires `ANTHROPIC_API_KEY` — shows a clean "connect AI" state without it. May propose actions (Approve card) but never executes them in v1. |
 | **`/dashboard/[id]/financials`** | P&L drill-down — categorized expenses, mortgage detail, equity. |
 | **`/dashboard/[id]/bookings`** | Per-stay economics — gross → fees → taxes → net, bar chart. |
 | **`/dashboard/analytics`** | **Investment intelligence.** Portfolio-level analytics with an Owner ↔ Investor view toggle, real-data projections (adjustable, labeled assumptions), recharts visuals, and AI narrative insights (rule-based without a key, Claude with `ANTHROPIC_API_KEY`). Linked from the dashboard. |
@@ -38,7 +39,7 @@ Both legacy pages are accessible by URL but intentionally buried. Do not delete 
 | **Charts** | recharts | AreaChart (utility spend), BarChart (bookings) |
 | **Icons** | lucide-react | Throughout `/dashboard` |
 | **Drag-and-drop** | @dnd-kit/core + @dnd-kit/sortable | Portfolio page property reordering |
-| **AI** | @anthropic-ai/sdk | Server-only, powers AI insights on `/dashboard/analytics`. Optional `ANTHROPIC_API_KEY` — degrades to rule-based without it |
+| **AI** | @anthropic-ai/sdk | Server-only `ANTHROPIC_API_KEY`. Powers (1) AI insights on `/dashboard/analytics` (degrades to rule-based without it) and (2) the `/dashboard/assistant` "Ask your portfolio" chat — Claude grounded in real Supabase data, prompt-cached, streaming (degrades to "connect AI" state without it) |
 | **Legacy styling** | Vanilla CSS (`globals.css`) | Used in `/legacy/dashboard` only — do not touch |
 
 ---
@@ -63,6 +64,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://feorwntlkwhwrsehmjmd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<get from Jaime>
 RENTCAST_API_KEY=<get from Jaime or sign up free at rentcast.io>
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<get from Jaime — Google Cloud key, public/client-safe>
+ANTHROPIC_API_KEY=<get from Jaime or console.anthropic.com — powers the AI assistant; server-only>
 
 # 4. Run locally
 npm run dev   # → http://localhost:3000
@@ -135,7 +137,9 @@ Preview URLs use the same Supabase DB as production — data you create on a pre
 - ✅ Demo mode — falls back to mock data when user has no real properties
 - ✅ **Drag-to-reorder properties** on portfolio page — grip handle top-left of each card, 2-column grid preserved, persists to `sort_order` in Supabase (requires migration 002)
 - ✅ Legacy pages moved to `/legacy/*`, main nav cleaned up
-- ✅ **Analytics / investment intelligence** (`/dashboard/analytics`, branch `feature/analytics`) — Owner ↔ Investor toggle, real-data projections with adjustable labeled assumptions, recharts visuals, AI narrative insights (rule-based without a key, Claude with `ANTHROPIC_API_KEY`). Built by a dispatched product-engineer session
+- ✅ **Analytics / investment intelligence** (`/dashboard/analytics`) — Owner ↔ Investor toggle, real-data projections with adjustable labeled assumptions, recharts visuals, AI narrative insights (rule-based without a key, Claude with `ANTHROPIC_API_KEY`). Built by a dispatched product-engineer session
+- ✅ **AI "Ask your portfolio" assistant** (`/dashboard/assistant`) — Claude answers natural-language questions grounded in your real Supabase portfolio, cites the numbers, proposes (but never executes) actions. Needs `ANTHROPIC_API_KEY`; degrades to a clean "connect AI" state without it. Exploration of lean/free OOTB data APIs (FRED, Census, HUD, Plaid, …) + the staged paid path is in `docs/AI_EXPERIENCE_EXPLORATION.md`
+- 🔀 Both above merged together on branch `feature/intelligence` (analytics + assistant), pending integration pass + test
 
 ### Open — next logical steps (in order)
 1. **⛔ Run migration 003** — `supabase/003_rentcast_cache.sql`. Required before adding properties (writes `lat`/`lng`) and before the Rentcast cache works. Also run migration 002 if not yet applied.

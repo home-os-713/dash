@@ -431,6 +431,13 @@ export default function PortfolioPage() {
               <span className="hidden sm:inline">Analytics</span>
             </Link>
             <Link
+              href="/dashboard/assistant"
+              className="flex items-center gap-2 text-accentfg hover:text-ink text-sm bg-accentfg/[0.08] border border-accentfg/20 rounded-xl px-3 py-2 transition-colors"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">Assistant</span>
+            </Link>
+            <Link
               href="/dashboard/inbox"
               className="flex items-center gap-2 text-muted hover:text-ink text-sm bg-tint/[0.025] border border-line rounded-xl px-3 py-2 transition-colors"
             >
