@@ -463,6 +463,32 @@ The wedge stays *bill aggregation + payment status by property* (R5). The assist
 
 ---
 
+## Round 16 — Investor-first polish pass (June 2026)
+
+**Decision: act on Jaime's 5 pieces of post-test feedback to make HomeOS read investor-first — portfolio/investment intelligence is the headline; bill/autopay management is supported but secondary.** Built on branch `feature/intelligence-polish` (off `feature/intelligence`).
+
+### Guiding principle
+When in doubt, favor the investor lens (value, equity, cash flow, ROI/cap rate) over bill-tracking chrome. Honesty rules unchanged: label **actual** vs **projected**, never fabricate, reuse `lib/v0/analytics.ts` as the single source of truth so every surface agrees.
+
+### The 5 changes
+1. **Analytics → one unified view.** Removed the Owner ↔ Investor toggle and the `homeos.analytics.view` localStorage logic. The page is now one sectioned scroll: *Portfolio at a glance* (value / equity / cash flow / blended return) → investor ratio strip (cap rate / CoC / GRM / DSCR / NOI, always shown) → *Projection* (adjustable labeled assumptions + headline) → charts → *By property* (full investor columns) → AI insights. Insights always request the full investor set (`view: "investor"` passed internally so the rule-based generator surfaces ratios). Adjustable assumptions kept; the toggle was the only thing dropped. **Why:** a single, well-organized page shows owners and investors the full picture without making them hunt — the toggle hid half the value behind a click.
+2. **Assistant renders Markdown.** Replies were dumping raw `**bold**`/`-` text. Added `react-markdown` + `remark-gfm` (small, standard) wrapped in `components/Markdown.tsx`, themed with the warm-editorial semantic tokens (tight spacing, bold, flat lists, inline code, tables). Streaming preserved — Markdown re-parses the accumulated text on each delta. Also **tuned the system prompt** (`app/api/assistant/route.ts`) with a FORMATTING block: lead with a one-sentence answer, short paragraphs, single-level bullets, bold the key number, keep it short. **Why:** clean, consistent formatting reads like a product, not a model dump.
+3. **Property detail → in-place per-property analytics.** Removed the "Financial summary" expandable block; replaced with a `PropertyAnalytics` section that runs the SAME engine (`computePropertyMetrics` + `projectProperty` from `lib/v0/analytics.ts`) → cap rate, cash-on-cash, NOI, monthly cash flow, equity, DSCR as stat tiles + a compact **projected** equity-buildup AreaChart, styled to match the portfolio analytics page. Point-in-time metrics labeled **actual**; the chart labeled **projected** (default assumptions, link out to /analytics to tune). **Why:** the per-property drill the analytics round flagged as a follow-up; reusing the engine means the numbers can't disagree with the portfolio page.
+4. **Property detail → map removed, full-width banner.** Stopped rendering `PropertyMap` on `/dashboard/[id]` and made the hero banner span the full row (was sharing it with a compact map). Removed the now-unused import + flex wrapper. **Kept the component file** (`components/PropertyMap.tsx`) for reuse; the add-property modal's Maps autocomplete is untouched; `lat`/`lng` are still persisted. **Why:** the map was decorative chrome competing with the investor data.
+5. **Dashboard home → portfolio overview headline.** Replaced the bill-centric one-sentence hero ("N bills across M properties · X on autopay") with a scannable `PortfolioOverview` card: total value, total equity, net monthly cash flow, blended return as stat tiles (hover, whole card links to `/dashboard/analytics`), property/unit count + occupancy in the header, **bills/autopay demoted** to a small secondary strip. Numbers come from `computePortfolioMetrics`; in demo mode a `mockAsDbProperties()` helper feeds the same engine so demo figures match /analytics. **Why:** the dashboard's job is now at-a-glance portfolio intelligence; bills are a supporting detail, not the headline.
+
+### Honesty / what to watch
+- `npm run build` passes green (Next.js 16 / Turbopack) **with `.env.local` present** — the worktree had none, so it was copied from the main worktree for the build, then removed (gitignored; same pre-existing env constraint noted in Rounds 12–15, not a code defect).
+- UI is auth-gated; not headlessly screenshot-verified (the documented constraint since Round 9 — authed pages bounce to `/login`). Verified by: production build green, `tsc --noEmit` clean, and `next dev` compiling all routes (`/login` 200, dashboard routes 307→login, no 500s). Pre-existing eslint `react-hooks` errors (Rentcast effect setState, mortgage `Date.now()` payoff calc) are unchanged and don't block `next build` (Next 16 doesn't lint during build).
+- **New dep:** `react-markdown` + `remark-gfm` (documented in CLAUDE.md + PARTNER_BRIEFING). No other deps added.
+- **Needs a human:** set `ANTHROPIC_API_KEY` to see the AI assistant + AI insights live (optional; both degrade gracefully). Coordinator merges to main after a human preview — this pass did NOT deploy.
+
+### Follow-ups
+- The detail-page widget-reorder idea (PARTNER_BRIEFING open item #2) is now more attractive since the map slot is freed and the analytics section is a clean widget.
+- Consider letting the per-property analytics chart read the user's saved assumptions (currently uses defaults) once assumptions move out of analytics-page localStorage into something shared.
+
+---
+
 **Any commit that changes product direction, repositions a feature, or makes a meaningful design/architecture decision must add a new entry here.** This is not a nice-to-have — it's how both collaborators and future Claude sessions stay aligned without re-litigating past decisions.
 
 When adding an entry:

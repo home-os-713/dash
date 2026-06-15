@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import PropertyMap from "@/components/PropertyMap";
 import {
   AreaChart,
   Area,
@@ -51,6 +50,15 @@ import {
   computeNOI,
   isDbId,
 } from "@/lib/v0/db";
+import {
+  computePropertyMetrics,
+  projectProperty,
+  summarizeProjection,
+  DEFAULT_ASSUMPTIONS,
+  fmtMoney,
+  fmtPct,
+  fmtRatio,
+} from "@/lib/v0/analytics";
 import {
   getProperty,
   billsByProperty as mockBillsByProperty,
@@ -106,7 +114,6 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
   const [showPropModal, setShowPropModal] = useState(false);
   const [showMortgageModal, setShowMortgageModal] = useState(false);
   const [showAddBillModal, setShowAddBillModal] = useState(false);
-  const [showFullFinancials, setShowFullFinancials] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [propForm, setPropForm] = useState({
@@ -314,9 +321,8 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 animate-rise stagger">
 
-      {/* ── 1. Hero banner + location map (side by side on desktop) ───────── */}
-      <div className="flex flex-col lg:flex-row gap-4 lg:items-stretch">
-      <div className={`flex-1 min-w-0 bg-surface rounded-2xl border border-line shadow-soft ${hc.border} border-l-4 p-5 sm:p-6`}>
+      {/* ── 1. Hero banner (full width — map removed, investor-first polish) ─ */}
+      <div className={`min-w-0 bg-surface rounded-2xl border border-line shadow-soft ${hc.border} border-l-4 p-5 sm:p-6`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start sm:items-center gap-4">
             <div className={`w-12 h-12 rounded-2xl ${hc.scoreBg} flex items-center justify-center shrink-0`}>
@@ -371,20 +377,6 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
             </button>
           </div>
         </div>
-      </div>
-
-        {/* Location map — compact widget beside the banner. Full width on mobile,
-            fixed beside it on desktop (stretches to the banner height). Returns
-            null (row collapses to just the banner) if the key is missing or
-            geocoding fails. */}
-        {(prop.address || prop.location) && (
-          <PropertyMap
-            address={prop.address ?? prop.location ?? ""}
-            lat={prop.lat}
-            lng={prop.lng}
-            className="relative w-full lg:w-72 h-40 lg:h-auto shrink-0 rounded-2xl overflow-hidden border border-line shadow-soft"
-          />
-        )}
       </div>
 
       {/* ── 2. KPI cards ─────────────────────────────────────────────────── */}
@@ -814,262 +806,9 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
         </CardContent>
       </Card>
 
-      {/* ── 6. Financial summary (expandable, full-width) ────────────────── */}
-      <Card className="bg-surface border-line text-ink">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-ink2 flex items-center gap-2">
-            <DollarSign className="w-4 h-4" />
-            Financial summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 mb-3">
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-sm text-muted">Income</span>
-              <span className="text-sm font-semibold text-emerald-600">{income > 0 ? `+${fmtCurrency(income)}` : "—"}</span>
-            </div>
-            {categoryTotals.slice(0, 3).map(([cat, amount]) => (
-              <div key={cat} className="flex items-center justify-between py-1.5">
-                <span className="flex items-center gap-2 text-sm text-muted">
-                  <span className={`w-1.5 h-1.5 rounded-full ${categoryColors[cat] ?? "bg-[#A8A59E]"} shrink-0`} />
-                  {cat}
-                </span>
-                <span className="text-sm font-semibold text-red-500">-{fmtCurrency(amount)}</span>
-              </div>
-            ))}
-            <div className="flex items-center justify-between pt-2 border-t border-line2">
-              <span className="text-sm font-medium text-ink2">Net cash flow</span>
-              <span className={`text-sm font-bold ${noi > 0 ? "text-emerald-600" : noi < 0 ? "text-red-500" : "text-accentfg"}`}>
-                {income > 0 || totalDue > 0 ? `${noi >= 0 ? "+" : ""}${fmtCurrency(noi)}` : "—"}
-              </span>
-            </div>
-          </div>
-
-          <div className="relative group pt-3 border-t border-line">
-            <button
-              onClick={() => setShowFullFinancials((v) => !v)}
-              className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-accentfg/[0.06] hover:bg-accentfg/[0.08] border border-line2 hover:border-line3 text-sm font-medium text-accentfg hover:text-ink transition-all"
-            >
-              <div className="flex items-center gap-2.5">
-                <DollarSign className="w-4 h-4" />
-                <span>Full P&amp;L · Mortgage · Equity</span>
-              </div>
-              <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${showFullFinancials ? "rotate-180" : ""}`} />
-            </button>
-            {!showFullFinancials && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 rounded-xl bg-paper border border-line3 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 p-4">
-                <div className="grid grid-cols-3 gap-5">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-faint mb-2">Top expenses</p>
-                    {categoryTotals.length > 0 && (
-                      <div className="h-2 rounded-full overflow-hidden flex bg-accentfg/[0.08] mb-2">
-                        {categoryTotals.slice(0, 4).map(([cat, amount]) => (
-                          <div
-                            key={cat}
-                            className={`h-full first:rounded-l-full last:rounded-r-full ${categoryColors[cat] ?? "bg-[#A8A59E]"}`}
-                            style={{ width: `${totalDue > 0 ? (amount / totalDue) * 100 : 0}%` }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                    <div className="space-y-0.5">
-                      {categoryTotals.slice(0, 3).map(([cat, amount]) => (
-                        <div key={cat} className="flex items-center gap-1.5 text-[11px]">
-                          <span className={`w-1.5 h-1.5 rounded-full ${categoryColors[cat] ?? "bg-[#A8A59E]"} shrink-0`} />
-                          <span className="text-muted truncate">{cat}</span>
-                          <span className="text-faint ml-auto shrink-0">{fmtCurrency(amount)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-faint mb-2">Mortgage</p>
-                    {mortPay > 0 && mortOrig > 0 ? (
-                      <>
-                        <div className="h-2 rounded-full overflow-hidden bg-accentfg/[0.08] mb-2">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-accentlight"
-                            style={{ width: `${Math.round((1 - mortBal / mortOrig) * 100)}%` }}
-                          />
-                        </div>
-                        <p className="text-[11px] text-muted">
-                          <span className="text-emerald-600 font-medium">{Math.round((1 - mortBal / mortOrig) * 100)}%</span> paid off
-                        </p>
-                        <p className="text-[11px] text-faint">{fmtCurrency(mortBal)} remaining</p>
-                      </>
-                    ) : (
-                      <p className="text-[11px] text-faint italic">Not set up yet</p>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-faint mb-2">Equity</p>
-                    {propVal > 0 ? (
-                      <div className="flex items-center gap-3">
-                        {(() => {
-                          const pR = 16; const pC = 2 * Math.PI * pR;
-                          return (
-                            <svg width="42" height="42" viewBox="0 0 42 42" className="shrink-0">
-                              <circle cx="21" cy="21" r={pR} fill="none" stroke="rgba(90,98,71,0.15)" strokeWidth="5" />
-                              {equityPct > 0 && (
-                                <circle cx="21" cy="21" r={pR} fill="none" stroke="#5A6247" strokeWidth="5"
-                                  strokeDasharray={`${(equityPct / 100) * pC} ${(1 - equityPct / 100) * pC}`}
-                                  strokeLinecap="round" transform="rotate(-90 21 21)" />
-                              )}
-                            </svg>
-                          );
-                        })()}
-                        <div>
-                          <p className="text-sm font-semibold text-accentfg">{equityPct}%</p>
-                          <p className="text-[11px] text-faint">{fmtCurrency(equity)}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-[11px] text-faint italic">Add property value</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {showFullFinancials && (
-            <div className="pt-4 mt-3 border-t border-line">
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                {/* Left: P&L breakdown (3/5 width) */}
-                <div className="lg:col-span-3 space-y-2.5">
-                  <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-3">Monthly P&amp;L</p>
-                  <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Income</p>
-                      <p className="text-[11px] text-muted">Monthly revenue</p>
-                    </div>
-                    <p className="text-lg font-semibold text-emerald-600">+{income > 0 ? fmtCurrency(income) : "—"}</p>
-                  </div>
-                  {categoryTotals.map(([cat, amount]) => (
-                    <div key={cat} className="flex items-center gap-3 p-3 rounded-xl bg-tint/[0.015] border border-subtle">
-                      <span className={`w-2.5 h-2.5 rounded-full ${categoryColors[cat] ?? "bg-[#A8A59E]"} shrink-0`} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm">{cat}</p>
-                        <div className="mt-1.5 h-1.5 bg-accentfg/[0.08] rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${categoryColors[cat] ?? "bg-[#A8A59E]"} rounded-full`}
-                            style={{ width: `${Math.round((amount / maxCat) * 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-semibold text-red-500">{fmtCurrency(amount)}</p>
-                        <p className="text-[10px] text-faint">{totalDue > 0 ? `${Math.round((amount / totalDue) * 100)}%` : ""}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between pt-3 border-t border-line">
-                    <p className="text-sm font-semibold">Net operating income</p>
-                    <p className={`text-xl font-bold tnum ${noi >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                      {income > 0 || totalDue > 0 ? fmtCurrency(noi) : "—"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right: Mortgage + Equity (2/5 width) */}
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Mortgage</p>
-                      <button onClick={() => setShowMortgageModal(true)} className="p-1 rounded-lg hover:bg-tint/[0.04] transition-colors">
-                        <Pencil className="w-3 h-3 text-faint" />
-                      </button>
-                    </div>
-                    {mortPay > 0 ? (
-                      <div className="space-y-2.5 p-4 rounded-xl bg-tint/[0.015] border border-subtle">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted">Monthly payment</span>
-                          <span className="text-sm font-semibold">
-                            {fmtCurrency(mortPay)}
-                            {mortRate > 0 && <span className="text-muted text-xs ml-1.5">@ {mortRate}%</span>}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted">Current balance</span>
-                          <span className="text-sm font-semibold">{fmtCurrency(mortBal)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted">Original loan</span>
-                          <span className="text-sm font-semibold">{fmtCurrency(mortOrig)}</span>
-                        </div>
-                        {mortBal > 0 && mortOrig > 0 && (
-                          <>
-                            <div className="flex items-center justify-between pt-2.5 border-t border-line">
-                              <span className="text-xs text-ink2">Principal paid</span>
-                              <span className="text-sm font-bold text-emerald-600">
-                                {fmtCurrency(mortOrig - mortBal)} ({Math.round((1 - mortBal / mortOrig) * 100)}%)
-                              </span>
-                            </div>
-                            <div className="h-2.5 bg-accentfg/[0.08] rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-accentlight"
-                                style={{ width: `${Math.round((1 - mortBal / mortOrig) * 100)}%` }}
-                              />
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setShowMortgageModal(true)}
-                        className="w-full py-5 border border-dashed border-line3 rounded-xl text-sm text-faint hover:text-muted hover:border-line3 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add mortgage details
-                      </button>
-                    )}
-                  </div>
-
-                  {propVal > 0 && (
-                    <div className="space-y-3">
-                      <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Equity</p>
-                      <div className="flex flex-col items-center p-4 rounded-xl bg-tint/[0.015] border border-subtle">
-                        {(() => {
-                          const eR = 54;
-                          const eC = 2 * Math.PI * eR;
-                          const eOffset = eC - (equityPct / 100) * eC;
-                          return (
-                            <svg width="140" height="140" viewBox="0 0 140 140">
-                              <circle cx="70" cy="70" r={eR} fill="none" stroke="rgba(90,98,71,0.15)" strokeWidth="11" />
-                              {equityPct > 0 && (
-                                <circle
-                                  cx="70" cy="70" r={eR} fill="none"
-                                  stroke="#5A6247" strokeWidth="11"
-                                  strokeDasharray={eC}
-                                  strokeDashoffset={eOffset}
-                                  strokeLinecap="round"
-                                  transform="rotate(-90 70 70)"
-                                />
-                              )}
-                              <text x="70" y="66" textAnchor="middle" style={{ fill: "var(--accentfg)" }} fontSize="22" fontWeight="bold">{equityPct}%</text>
-                              <text x="70" y="84" textAnchor="middle" style={{ fill: "var(--faint)" }} fontSize="10">equity</text>
-                            </svg>
-                          );
-                        })()}
-                        <div className="grid grid-cols-2 gap-4 w-full mt-3 pt-3 border-t border-line">
-                          <div>
-                            <p className="text-muted text-[11px]">Equity</p>
-                            <p className="text-base font-semibold text-accentfg">{fmtCurrency(equity)}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted text-[11px]">Owed</p>
-                            <p className="text-base font-semibold">{mortBal > 0 ? fmtCurrency(mortBal) : "—"}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* ── 6. Per-property analytics (investor-first; same engine as the    */}
+      {/*       portfolio analytics page → numbers agree everywhere) ───────── */}
+      <PropertyAnalytics property={prop} bills={bills} />
 
       {/* ── 7. Modals ─────────────────────────────────────────────────────── */}
 
@@ -1272,6 +1011,210 @@ function RealPropertyDetail({ property: initialProperty }: { property: DbPropert
       )}
 
     </main>
+  );
+}
+
+// ── Per-property analytics ───────────────────────────────────────────────────
+//
+// Drives the SAME pure engine (lib/v0/analytics.ts) that powers the portfolio
+// /dashboard/analytics page — so cap rate, cash-on-cash, NOI, cash flow and
+// equity for a single property match the portfolio numbers exactly. Replaces the
+// old "financial summary" block. Honors the honesty rules: point-in-time metrics
+// are ACTUAL (from stored data); the equity-buildup chart is PROJECTED under the
+// default assumptions and labeled as such.
+
+function PropertyAnalytics({
+  property,
+  bills,
+}: {
+  property: DbPropertyWithBills;
+  bills: DbBill[];
+}) {
+  // Build the metric bundle from the live (optimistic) prop + bills state.
+  const m = computePropertyMetrics({ ...property, bills });
+  const projection = projectProperty({ ...property, bills }, DEFAULT_ASSUMPTIONS);
+  const summary = summarizeProjection(projection);
+
+  // Earthy chart palette — matches the portfolio analytics page.
+  const equityColor = "var(--accentfg)";
+
+  const hasAny = m.hasValue || m.hasIncome || m.hasMortgage;
+
+  const stats: {
+    label: string;
+    value: string;
+    hint: string;
+    tone?: "pos" | "neg" | "accent";
+  }[] = [
+    {
+      label: "Monthly cash flow",
+      value: m.hasIncome ? fmtMoney(m.monthlyCashFlow) : "—",
+      hint: "income − opex − debt",
+      tone: m.monthlyCashFlow > 0 ? "pos" : m.monthlyCashFlow < 0 ? "neg" : undefined,
+    },
+    {
+      label: "Cap rate",
+      value: fmtPct(m.capRate),
+      hint: "NOI ÷ value",
+    },
+    {
+      label: "Cash-on-cash",
+      value: fmtPct(m.cashOnCash),
+      hint: "cash flow ÷ equity",
+    },
+    {
+      label: "Annual NOI",
+      value: m.hasIncome ? fmtMoney(m.annualNOI) : "—",
+      hint: "(income − opex) × 12",
+    },
+    {
+      label: "Equity",
+      value: m.hasValue ? fmtMoney(m.equity) : "—",
+      hint: "value − loan balance",
+      tone: "accent",
+    },
+    {
+      label: "DSCR",
+      value: fmtRatio(m.dscr),
+      hint: "NOI ÷ debt service",
+    },
+  ];
+
+  return (
+    <Card className="bg-surface border-line text-ink">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-ink2 flex items-center gap-2">
+          <TrendingUp className="w-4 h-4" />
+          Property analytics
+          <Link
+            href="/dashboard/analytics"
+            className="ml-auto flex items-center gap-1 text-[11px] text-accentfg/70 hover:text-accentfg border border-line2 hover:border-line3 rounded-lg px-2.5 py-1 transition-colors"
+          >
+            Portfolio view
+            <ChevronRight className="w-3 h-3" />
+          </Link>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {!hasAny ? (
+          <div className="py-8 text-center">
+            <TrendingUp className="w-8 h-8 text-faint2 mx-auto mb-3" />
+            <p className="text-sm text-faint mb-1">
+              Add this property&apos;s value, income, or mortgage to see investor metrics.
+            </p>
+            <p className="text-[11px] text-faint2">
+              Cap rate, cash-on-cash, NOI and equity buildup are computed from your stored numbers.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Actual point-in-time metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {stats.map((s) => (
+                <div
+                  key={s.label}
+                  className="rounded-xl border border-line bg-tint/[0.015] p-3.5"
+                >
+                  <p className="text-[10px] uppercase tracking-wider text-muted mb-1.5">
+                    {s.label}
+                  </p>
+                  <p
+                    className={`text-xl font-bold tnum ${
+                      s.tone === "accent"
+                        ? "text-accentfg"
+                        : s.tone === "pos"
+                          ? "text-emerald-600"
+                          : s.tone === "neg"
+                            ? "text-red-500"
+                            : "text-ink"
+                    }`}
+                  >
+                    {s.value}
+                  </p>
+                  <p className="text-[10px] text-faint2 mt-0.5">{s.hint}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Projected equity buildup — labeled projected, default assumptions */}
+            {m.hasValue && summary && summary.holdingPeriod > 0 && (
+              <div className="mt-4 pt-4 border-t border-line">
+                <div className="flex items-baseline justify-between mb-2 flex-wrap gap-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-accentfg" />
+                    Projected equity ·{" "}
+                    <span className="text-faint2 normal-case tracking-normal">
+                      {DEFAULT_ASSUMPTIONS.appreciation}% appreciation, {DEFAULT_ASSUMPTIONS.holdingPeriod}-yr hold
+                    </span>
+                  </p>
+                  <p className="text-xs text-muted">
+                    {fmtMoney(summary.startEquity)} →{" "}
+                    <span className="font-semibold text-accentfg">{fmtMoney(summary.endEquity)}</span>
+                  </p>
+                </div>
+                <div className="h-32">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={projection} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="propEquityFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={equityColor} stopOpacity={0.3} />
+                          <stop offset="100%" stopColor={equityColor} stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 10, fill: "var(--muted)" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tickFormatter={(v) =>
+                          Math.abs(v) >= 1_000_000
+                            ? `$${(v / 1_000_000).toFixed(1)}M`
+                            : `$${Math.round(v / 1000)}k`
+                        }
+                        tick={{ fontSize: 10, fill: "var(--muted)" }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={44}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: "var(--surface)",
+                          border: "1px solid var(--line2)",
+                          borderRadius: 12,
+                          fontSize: 12,
+                          color: "var(--ink)",
+                        }}
+                        formatter={(v) => [fmtMoney(Number(v)), "Equity"]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="equity"
+                        stroke={equityColor}
+                        strokeWidth={2}
+                        fill="url(#propEquityFill)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            <p className="text-[10px] text-faint2 mt-3">
+              Metrics are <strong>actual</strong>, computed from your stored value, income, bills and
+              mortgage. The equity-buildup chart is <strong>projected</strong> under default
+              assumptions — adjust them on the{" "}
+              <Link href="/dashboard/analytics" className="text-accentfg hover:underline">
+                portfolio analytics
+              </Link>{" "}
+              page.
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

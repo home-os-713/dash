@@ -17,6 +17,9 @@ import {
   GripVertical,
   Sparkles,
   TrendingUp,
+  Wallet,
+  Building2,
+  Percent,
 } from "lucide-react";
 import { useRentcastLookup } from "@/lib/useRentcastLookup";
 import {
@@ -46,6 +49,11 @@ import {
   computePropertyHealth,
   computeNOI,
 } from "@/lib/v0/db";
+import {
+  computePortfolioMetrics,
+  fmtMoney,
+  fmtPct,
+} from "@/lib/v0/analytics";
 import {
   properties as mockProperties,
   billsByProperty as mockBillsByProperty,
@@ -85,6 +93,46 @@ const emptyForm: PropertyForm = {
   mortPay: "",
   mortRate: "",
 };
+
+// Build DB-shaped properties out of the mock set so the demo (no real data)
+// drives the SAME portfolio metrics engine the analytics page uses. Mirrors the
+// analytics page's fallback so the overview numbers agree in demo mode too.
+function mockAsDbProperties(): DbPropertyWithBills[] {
+  return mockProperties.map((p) => ({
+    id: p.id,
+    user_id: "mock",
+    name: p.name,
+    address: p.address,
+    location: p.location,
+    type: p.type,
+    prop_val: p.propVal,
+    mort_pay: p.mortPay,
+    mort_bal: p.mortBal,
+    mort_orig: p.mortOrig,
+    mort_rate: p.mortRate,
+    income: p.id === "phoenix" ? 4850 : 3200,
+    occupancy: p.id === "phoenix" ? 82 : 74,
+    rent: p.id === "phoenix" ? 4850 : 3200,
+    rent_bills: null,
+    sort_order: null,
+    lat: null,
+    lng: null,
+    updated_at: new Date().toISOString(),
+    bills: (mockBillsByProperty[p.id] ?? []).map((b) => ({
+      id: b.id,
+      property_id: p.id,
+      name: b.name,
+      amount: b.amount,
+      due_date: b.dueDate,
+      paid: false,
+      category: b.category,
+      autopay: b.autopay,
+      status: b.status,
+      status_label: b.statusLabel,
+      source: b.source ?? null,
+    })),
+  }));
+}
 
 // ── Sortable property card ───────────────────────────────────────────────────
 
@@ -216,6 +264,125 @@ function SortablePropertyCard({ p }: { p: DbPropertyWithBills }) {
   );
 }
 
+// ── Portfolio overview (investor-first headline) ─────────────────────────────
+//
+// Scannable stat tiles — total value, equity, net monthly cash flow, blended
+// return, plus property/unit count and occupancy when available. Numbers come
+// from computePortfolioMetrics (lib/v0/analytics.ts) so they match the analytics
+// page exactly. The whole card links to /dashboard/analytics. Bills/autopay are
+// demoted to a small secondary strip — supported, not the headline.
+
+function PortfolioOverview({
+  portfolio,
+  propertyCount,
+  bills,
+}: {
+  portfolio: ReturnType<typeof computePortfolioMetrics>;
+  propertyCount: number;
+  bills: { total: number; autopay: number; needsYou: number; due: number };
+}) {
+  const m = portfolio;
+  const tiles: {
+    label: string;
+    value: string;
+    icon: typeof Wallet;
+    tone?: "pos" | "neg" | "accent";
+  }[] = [
+    { label: "Portfolio value", value: fmtMoney(m.totalValue), icon: Building2 },
+    { label: "Total equity", value: fmtMoney(m.totalEquity), icon: Wallet, tone: "accent" },
+    {
+      label: "Net cash flow/mo",
+      value: fmtMoney(m.monthlyCashFlow),
+      icon: TrendingUp,
+      tone: m.monthlyCashFlow >= 0 ? "pos" : "neg",
+    },
+    { label: "Blended return", value: fmtPct(m.blendedCashOnCash), icon: Percent },
+  ];
+
+  return (
+    <div className="bg-surface border border-line rounded-2xl shadow-soft overflow-hidden">
+      {/* Header → links to full analytics */}
+      <Link
+        href="/dashboard/analytics"
+        className="group flex items-center justify-between gap-3 px-6 pt-5 pb-3 hover:bg-tint/[0.015] transition-colors"
+      >
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <h1 className="text-lg sm:text-xl font-serif font-bold">Portfolio overview</h1>
+          <span className="text-muted text-xs">
+            {propertyCount} {propertyCount === 1 ? "property" : "properties"}
+            {m.unitCount > propertyCount && ` · ${m.unitCount} units`}
+            {m.avgOccupancy != null && ` · ${Math.round(m.avgOccupancy)}% occupancy`}
+          </span>
+        </div>
+        <span className="flex items-center gap-1 text-xs text-accentfg shrink-0">
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Analytics</span>
+          <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+        </span>
+      </Link>
+
+      {/* Stat tiles */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-line">
+        {tiles.map((t) => (
+          <Link
+            key={t.label}
+            href="/dashboard/analytics"
+            className="group bg-surface px-6 py-4 hover:bg-tint/[0.02] transition-colors"
+          >
+            <div className="flex items-center gap-1.5 text-muted text-[11px] uppercase tracking-wider mb-1.5">
+              <t.icon className="w-3.5 h-3.5" />
+              {t.label}
+            </div>
+            <p
+              className={`text-xl sm:text-2xl font-bold tnum ${
+                t.tone === "accent"
+                  ? "text-accentfg"
+                  : t.tone === "pos"
+                    ? "text-emerald-600"
+                    : t.tone === "neg"
+                      ? "text-red-500"
+                      : "text-ink"
+              }`}
+            >
+              {t.value}
+            </p>
+          </Link>
+        ))}
+      </div>
+
+      {/* Demoted bills/autopay strip — supported, secondary */}
+      <div className="flex items-center gap-x-5 gap-y-1.5 flex-wrap px-6 py-3 border-t border-line bg-tint/[0.01]">
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+          <Receipt className="w-3.5 h-3.5 text-faint" />
+          <span className="font-medium text-ink2 tnum">{bills.total}</span> bills
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+          <Zap className="w-3.5 h-3.5 text-faint" />
+          <span className="font-medium text-emerald-600 tnum">{bills.autopay}</span> on autopay
+        </span>
+        {bills.due > 0 && (
+          <span className="text-xs text-muted">
+            <span className="font-medium text-ink2 tnum">{fmtCurrency(bills.due)}</span> due this month
+          </span>
+        )}
+        {bills.needsYou > 0 ? (
+          <Link
+            href="/dashboard/inbox"
+            className="inline-flex items-center gap-1.5 text-xs text-amber-600 hover:text-ink ml-auto transition-colors"
+          >
+            <span className="font-medium tnum">{bills.needsYou}</span> need attention
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 ml-auto">
+            All bills handled
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Portfolio page ───────────────────────────────────────────────────────────
 
 export default function PortfolioPage() {
@@ -285,7 +452,6 @@ export default function PortfolioPage() {
 
   const totalBills = allBills.length;
   const onAutopay = allBills.filter((b) => b.autopay).length;
-  const needAttention = allBills.filter((b) => b.status !== "green").length;
   const totalDue = allBills.reduce((s, b) => s + (b.amount ?? 0), 0);
 
   const totalUrgent = useReal
@@ -294,6 +460,11 @@ export default function PortfolioPage() {
   const totalSoon = useReal
     ? allBills.filter((b) => b.status === "yellow").length
     : actionItems.filter((a) => a.priority === "soon").length;
+
+  // ── Portfolio overview metrics (single source of truth — matches /analytics)
+  // Computed from real properties, or DB-shaped mock props in demo mode.
+  const metricsProps = useReal ? dbProperties : mockAsDbProperties();
+  const portfolio = computePortfolioMetrics(metricsProps);
 
   // ── Drag-and-drop handler ────────────────────────────────────────────────
 
@@ -476,51 +647,21 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        {/* Hero */}
-        <div className="bg-surface border border-line rounded-2xl shadow-soft p-6 sm:p-8">
-          <p className="text-[11px] uppercase tracking-wider text-muted mb-3">
-            Every bill, every property, one place
-          </p>
-          {loadingData ? (
+        {/* ── Portfolio overview (investor-first headline) ─────────────────── */}
+        {loadingData ? (
+          <div className="bg-surface border border-line rounded-2xl shadow-soft p-6 sm:p-8">
             <div className="flex items-center gap-2 text-faint">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm">Loading your properties…</span>
-            </div>
-          ) : (
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold leading-tight">
-              <span className="text-ink">{totalBills} bills</span>
-              <span className="text-muted"> across </span>
-              <span className="text-ink">
-                {useReal ? dbProperties.length : mockProperties.length} properties
-              </span>
-              <span className="text-muted"> · </span>
-              <span className="text-emerald-600">{onAutopay} on autopay</span>
-              {needAttention > 0 && (
-                <>
-                  <span className="text-muted"> · </span>
-                  <span className="text-amber-600">{needAttention} need attention</span>
-                </>
-              )}
-            </h1>
-          )}
-          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-line">
-            <div>
-              <p className="text-muted text-[11px] uppercase tracking-wider">Bills due this month</p>
-              <p className="text-2xl font-bold tnum text-accentfg mt-1">{fmtCurrency(totalDue)}</p>
-            </div>
-            <div>
-              <p className="text-muted text-[11px] uppercase tracking-wider">On autopay</p>
-              <p className="text-2xl font-bold tnum text-emerald-600 mt-1">
-                {onAutopay}
-                <span className="text-faint text-base font-normal">/{totalBills}</span>
-              </p>
-            </div>
-            <div>
-              <p className="text-muted text-[11px] uppercase tracking-wider">Needs you</p>
-              <p className="text-2xl font-bold tnum text-ink mt-1">{totalUrgent + totalSoon}</p>
+              <span className="text-sm">Loading your portfolio…</span>
             </div>
           </div>
-        </div>
+        ) : (
+          <PortfolioOverview
+            portfolio={portfolio}
+            propertyCount={useReal ? dbProperties.length : mockProperties.length}
+            bills={{ total: totalBills, autopay: onAutopay, needsYou: totalUrgent + totalSoon, due: totalDue }}
+          />
+        )}
 
         {/* Inbox shortcut (mock only — real doesn't have action items yet) */}
         {!useReal && totalUrgent + totalSoon > 0 && (

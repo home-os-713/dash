@@ -14,13 +14,13 @@ A property management web app for STR hosts. Users sign up, add their properties
 
 | Route | What it is |
 |---|---|
-| **`/dashboard`** | **Main product.** Portfolio overview — real properties from Supabase, falls back to demo data when none exist. Multi-property. Add property modal with address lookup. |
-| **`/dashboard/[id]`** | Property detail — bills, financial summary, utility chart, bookings preview. UUID IDs load real data; demo slugs ("phoenix", "pvr") load mock. |
+| **`/dashboard`** | **Main product.** Investor-first **portfolio overview** headline (total value, equity, net monthly cash flow, blended return as stat tiles → links to analytics; bills/autopay demoted to a small strip). Real properties from Supabase, falls back to demo data when none exist. Multi-property. Add property modal with address lookup. (Round 16) |
+| **`/dashboard/[id]`** | Property detail — bills, **in-place per-property analytics** (cap rate, cash-on-cash, NOI, cash flow, equity + projected equity chart, same engine as /analytics), utility chart. Full-width banner (map removed). UUID IDs load real data; demo slugs ("phoenix", "pvr") load mock. (Round 16) |
 | **`/dashboard/inbox`** | Cross-property action hub — urgent items, already-handled receipts, AI-parsed emails (currently mock). |
-| **`/dashboard/assistant`** | **AI "Ask your portfolio" chat.** Natural-language questions about your real properties/finances; Claude answers grounded in your Supabase data and cites the numbers used. Requires `ANTHROPIC_API_KEY` — shows a clean "connect AI" state without it. May propose actions (Approve card) but never executes them in v1. |
+| **`/dashboard/assistant`** | **AI "Ask your portfolio" chat.** Natural-language questions about your real properties/finances; Claude answers grounded in your Supabase data and cites the numbers used. **Replies render as clean Markdown** (Round 16). Requires `ANTHROPIC_API_KEY` — shows a clean "connect AI" state without it. May propose actions (Approve card) but never executes them in v1. |
 | **`/dashboard/[id]/financials`** | P&L drill-down — categorized expenses, mortgage detail, equity. |
 | **`/dashboard/[id]/bookings`** | Per-stay economics — gross → fees → taxes → net, bar chart. |
-| **`/dashboard/analytics`** | **Investment intelligence.** Portfolio-level analytics with an Owner ↔ Investor view toggle, real-data projections (adjustable, labeled assumptions), recharts visuals, and AI narrative insights (rule-based without a key, Claude with `ANTHROPIC_API_KEY`). Linked from the dashboard. |
+| **`/dashboard/analytics`** | **Investment intelligence.** ONE unified view (Round 16 removed the Owner/Investor toggle): headline stats + investor ratios + real-data projections (adjustable, labeled assumptions) + recharts visuals + per-property table + AI narrative insights (rule-based without a key, Claude with `ANTHROPIC_API_KEY`). Linked from the dashboard. |
 | **`/legacy/dashboard`** | Old single-property dashboard. Real Supabase data, vanilla CSS. Kept for reference — not linked from the main app. |
 | **`/legacy/homeos`** | Original partner design prototype. Mock data, Tailwind + recharts. Kept for reference — not linked from the main app. |
 
@@ -40,6 +40,7 @@ Both legacy pages are accessible by URL but intentionally buried. Do not delete 
 | **Icons** | lucide-react | Throughout `/dashboard` |
 | **Drag-and-drop** | @dnd-kit/core + @dnd-kit/sortable | Portfolio page property reordering |
 | **AI** | @anthropic-ai/sdk | Server-only `ANTHROPIC_API_KEY`. Powers (1) AI insights on `/dashboard/analytics` (degrades to rule-based without it) and (2) the `/dashboard/assistant` "Ask your portfolio" chat — Claude grounded in real Supabase data, prompt-cached, streaming (degrades to "connect AI" state without it) |
+| **Markdown** | react-markdown + remark-gfm | Renders the assistant's streamed Markdown replies cleanly (`components/Markdown.tsx`); only on `/dashboard/assistant` (Round 16) |
 | **Legacy styling** | Vanilla CSS (`globals.css`) | Used in `/legacy/dashboard` only — do not touch |
 
 ---
@@ -140,6 +141,7 @@ Preview URLs use the same Supabase DB as production — data you create on a pre
 - ✅ **Analytics / investment intelligence** (`/dashboard/analytics`) — Owner ↔ Investor toggle, real-data projections with adjustable labeled assumptions, recharts visuals, AI narrative insights (rule-based without a key, Claude with `ANTHROPIC_API_KEY`). Built by a dispatched product-engineer session
 - ✅ **AI "Ask your portfolio" assistant** (`/dashboard/assistant`) — Claude answers natural-language questions grounded in your real Supabase portfolio, cites the numbers, proposes (but never executes) actions. Needs `ANTHROPIC_API_KEY`; degrades to a clean "connect AI" state without it. Exploration of lean/free OOTB data APIs (FRED, Census, HUD, Plaid, …) + the staged paid path is in `docs/AI_EXPERIENCE_EXPLORATION.md`
 - 🔀 Both above merged together on branch `feature/intelligence` (analytics + assistant), pending integration pass + test
+- ✅ **Investor-first polish pass (Round 16, branch `feature/intelligence-polish`)** — (1) analytics collapsed to ONE unified view (no Owner/Investor toggle); (2) assistant replies render as clean Markdown + tuned system prompt; (3) property detail "financial summary" replaced with in-place per-property analytics (shared engine); (4) PropertyMap removed from detail page, banner full-width; (5) dashboard headline redesigned into a scannable portfolio overview (value/equity/cash flow/return tiles), bills demoted. All numbers flow through `lib/v0/analytics.ts`. Build green.
 
 ### Open — next logical steps (in order)
 1. **⛔ Run migration 003** — `supabase/003_rentcast_cache.sql`. Required before adding properties (writes `lat`/`lng`) and before the Rentcast cache works. Also run migration 002 if not yet applied.

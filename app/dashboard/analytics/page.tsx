@@ -58,9 +58,6 @@ import {
   billsByProperty as mockBillsByProperty,
 } from "@/lib/v0/mockData";
 
-type ViewMode = "owner" | "investor";
-
-const VIEW_KEY = "homeos.analytics.view";
 const ASSUMPTIONS_KEY = "homeos.analytics.assumptions";
 
 // Earthy chart palette (matches DECISION_LOG Round 10/11 harmonization).
@@ -116,7 +113,6 @@ export default function AnalyticsPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [view, setView] = useState<ViewMode>("owner");
   const [assumptions, setAssumptions] = useState<Assumptions>(DEFAULT_ASSUMPTIONS);
   const [dbProperties, setDbProperties] = useState<DbPropertyWithBills[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,22 +121,14 @@ export default function AnalyticsPage() {
   const [insights, setInsights] = useState<InsightsResponse | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
 
-  // ── Restore persisted view + assumptions ────────────────────────────────────
+  // ── Restore persisted assumptions ───────────────────────────────────────────
   useEffect(() => {
     try {
-      const v = localStorage.getItem(VIEW_KEY);
-      if (v === "owner" || v === "investor") setView(v);
       const a = localStorage.getItem(ASSUMPTIONS_KEY);
       if (a) setAssumptions({ ...DEFAULT_ASSUMPTIONS, ...JSON.parse(a) });
     } catch {}
   }, []);
 
-  function persistView(v: ViewMode) {
-    setView(v);
-    try {
-      localStorage.setItem(VIEW_KEY, v);
-    } catch {}
-  }
   function persistAssumptions(a: Assumptions) {
     setAssumptions(a);
     try {
@@ -195,8 +183,9 @@ export default function AnalyticsPage() {
   const fetchInsights = useCallback(
     async (signal: AbortSignal) => {
       if (metrics.propertyCount === 0) return;
+      // Unified view → always surface the full investor-grade insight set.
       const input: InsightsInput = {
-        view,
+        view: "investor",
         assumptions,
         portfolio: metrics,
         projection: summary,
@@ -216,12 +205,12 @@ export default function AnalyticsPage() {
         if ((e as Error).name === "AbortError") return;
         // Client-side graceful fallback — compute the same rule-based insights
         // locally so the panel always shows something real.
-        setInsights(ruleBasedInsights({ view, assumptions, portfolio: metrics, projection: summary }));
+        setInsights(ruleBasedInsights({ view: "investor", assumptions, portfolio: metrics, projection: summary }));
       } finally {
         setInsightsLoading(false);
       }
     },
-    [view, assumptions, metrics, summary]
+    [assumptions, metrics, summary]
   );
 
   useEffect(() => {
@@ -257,7 +246,6 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <ViewToggle view={view} onChange={persistView} />
             <ThemeToggle />
           </div>
         </div>
@@ -278,39 +266,37 @@ export default function AnalyticsPage() {
           </div>
         ) : (
           <>
-            {/* Hero metrics */}
-            <HeroMetrics view={view} m={metrics} />
+            {/* ── Headline stats (value · equity · cash flow · return) ─────── */}
+            <SectionLabel>Portfolio at a glance</SectionLabel>
+            <HeroMetrics m={metrics} />
 
-            {/* Investor ratio strip */}
-            {view === "investor" && <RatioStrip m={metrics} />}
+            {/* ── Investor ratios (cap rate · CoC · GRM · DSCR · NOI) ──────── */}
+            <RatioStrip m={metrics} />
 
-            {/* Assumptions panel */}
+            {/* ── Projection assumptions + headline ───────────────────────── */}
+            <SectionLabel>Projection</SectionLabel>
             <AssumptionsPanel
               assumptions={assumptions}
               onChange={persistAssumptions}
               onReset={() => persistAssumptions(DEFAULT_ASSUMPTIONS)}
             />
-
-            {/* Projection summary headline */}
             {summary && summary.holdingPeriod > 0 && (
               <ProjectionHeadline summary={summary} assumptions={assumptions} />
             )}
 
-            {/* Charts grid */}
+            {/* ── Charts ──────────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <EquityBuildupChart data={projection} />
               <ValueOverTimeChart data={projection} />
               <CashFlowChart data={cashFlowData} />
-              {composition.length > 1 ? (
-                <CompositionChart data={composition} />
-              ) : (
-                <PerPropertyTable m={metrics} view={view} />
-              )}
+              {composition.length > 1 && <CompositionChart data={composition} />}
             </div>
 
-            {composition.length > 1 && <PerPropertyTable m={metrics} view={view} />}
+            {/* ── Per-property breakdown (full investor columns) ──────────── */}
+            <SectionLabel>By property</SectionLabel>
+            <PerPropertyTable m={metrics} />
 
-            {/* AI / rule-based insights */}
+            {/* ── AI / rule-based insights ────────────────────────────────── */}
             <InsightsPanel insights={insights} loading={insightsLoading} />
           </>
         )}
@@ -327,54 +313,36 @@ export default function AnalyticsPage() {
   );
 }
 
-// ── View toggle ───────────────────────────────────────────────────────────────
+// ── Section label ─────────────────────────────────────────────────────────────
 
-function ViewToggle({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode) => void }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center bg-tint/[0.04] border border-line rounded-xl p-0.5 text-xs">
-      {(["owner", "investor"] as ViewMode[]).map((v) => (
-        <button
-          key={v}
-          onClick={() => onChange(v)}
-          className={`px-3 py-1.5 rounded-lg font-medium capitalize transition-colors ${
-            view === v ? "bg-surface text-ink shadow-soft" : "text-muted hover:text-ink"
-          }`}
-        >
-          {v}
-        </button>
-      ))}
-    </div>
+    <h2 className="text-[11px] uppercase tracking-wider text-faint2 font-medium pt-2 -mb-1">
+      {children}
+    </h2>
   );
 }
 
-// ── Hero metrics ──────────────────────────────────────────────────────────────
+// ── Hero metrics (unified — value · equity · cash flow · blended return) ───────
 
-function HeroMetrics({ view, m }: { view: ViewMode; m: PortfolioMetrics }) {
-  const cards =
-    view === "owner"
-      ? [
-          { label: "Portfolio value", value: fmtMoney(m.totalValue), icon: Building2, accent: false },
-          { label: "Total equity", value: fmtMoney(m.totalEquity), icon: Wallet, accent: true },
-          {
-            label: "Monthly cash flow",
-            value: fmtMoney(m.monthlyCashFlow),
-            icon: TrendingUp,
-            accent: false,
-            tone: m.monthlyCashFlow >= 0 ? "pos" : "neg",
-          },
-          {
-            label: "Simple ROI",
-            value: fmtPct(m.blendedCashOnCash),
-            icon: Percent,
-            accent: false,
-          },
-        ]
-      : [
-          { label: "Portfolio value", value: fmtMoney(m.totalValue), icon: Building2, accent: false },
-          { label: "Total equity", value: fmtMoney(m.totalEquity), icon: Wallet, accent: true },
-          { label: "Annual NOI", value: fmtMoney(m.annualNOI), icon: TrendingUp, accent: false },
-          { label: "Loan-to-value", value: fmtPct(m.ltv, 0), icon: Percent, accent: false },
-        ];
+function HeroMetrics({ m }: { m: PortfolioMetrics }) {
+  const cards: {
+    label: string;
+    value: string;
+    icon: typeof Building2;
+    accent?: boolean;
+    tone?: "pos" | "neg";
+  }[] = [
+    { label: "Portfolio value", value: fmtMoney(m.totalValue), icon: Building2 },
+    { label: "Total equity", value: fmtMoney(m.totalEquity), icon: Wallet, accent: true },
+    {
+      label: "Monthly cash flow",
+      value: fmtMoney(m.monthlyCashFlow),
+      icon: TrendingUp,
+      tone: m.monthlyCashFlow >= 0 ? "pos" : "neg",
+    },
+    { label: "Blended return", value: fmtPct(m.blendedCashOnCash), icon: Percent },
+  ];
 
   return (
     <div>
@@ -694,7 +662,7 @@ function Legend({ color, label, dashed }: { color: string; label: string; dashed
 
 // ── Per-property table ────────────────────────────────────────────────────────
 
-function PerPropertyTable({ m, view }: { m: PortfolioMetrics; view: ViewMode }) {
+function PerPropertyTable({ m }: { m: PortfolioMetrics }) {
   return (
     <div className="bg-surface border border-line rounded-2xl shadow-soft overflow-hidden">
       <div className="p-5 pb-3">
@@ -708,15 +676,9 @@ function PerPropertyTable({ m, view }: { m: PortfolioMetrics; view: ViewMode }) 
               <th className="text-right font-medium px-3 py-2">Value</th>
               <th className="text-right font-medium px-3 py-2">Equity</th>
               <th className="text-right font-medium px-3 py-2">Cash flow/mo</th>
-              {view === "investor" ? (
-                <>
-                  <th className="text-right font-medium px-3 py-2">Cap</th>
-                  <th className="text-right font-medium px-3 py-2">CoC</th>
-                  <th className="text-right font-medium px-3 py-2">DSCR</th>
-                </>
-              ) : (
-                <th className="text-right font-medium px-5 py-2">ROI</th>
-              )}
+              <th className="text-right font-medium px-3 py-2">Cap</th>
+              <th className="text-right font-medium px-3 py-2">CoC</th>
+              <th className="text-right font-medium px-5 py-2">DSCR</th>
             </tr>
           </thead>
           <tbody>
@@ -740,15 +702,9 @@ function PerPropertyTable({ m, view }: { m: PortfolioMetrics; view: ViewMode }) 
                 >
                   {fmtMoney(p.monthlyCashFlow)}
                 </td>
-                {view === "investor" ? (
-                  <>
-                    <td className="text-right tnum px-3 py-3">{fmtPct(p.capRate)}</td>
-                    <td className="text-right tnum px-3 py-3">{fmtPct(p.cashOnCash)}</td>
-                    <td className="text-right tnum px-3 py-3">{fmtRatio(p.dscr)}</td>
-                  </>
-                ) : (
-                  <td className="text-right tnum px-5 py-3">{fmtPct(p.simpleROI)}</td>
-                )}
+                <td className="text-right tnum px-3 py-3">{fmtPct(p.capRate)}</td>
+                <td className="text-right tnum px-3 py-3">{fmtPct(p.cashOnCash)}</td>
+                <td className="text-right tnum px-5 py-3">{fmtRatio(p.dscr)}</td>
               </tr>
             ))}
           </tbody>

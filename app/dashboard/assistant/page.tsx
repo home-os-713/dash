@@ -26,6 +26,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import Markdown from "@/components/Markdown";
 import { createClient } from "@/lib/supabase/client";
 import { listUserProperties } from "@/lib/v0/db";
 import {
@@ -252,6 +253,10 @@ export default function AssistantPage() {
                   <span className="inline-flex items-center gap-2 text-muted">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" /> Reading your portfolio…
                   </span>
+                ) : m.role === "assistant" ? (
+                  // Model replies are Markdown — render them cleanly (bold,
+                  // lists, inline code, tables) instead of dumping raw text.
+                  <Markdown>{m.content}</Markdown>
                 ) : (
                   <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
                 )}
